@@ -168,23 +168,23 @@ public class Main {
             } else if (c == '=' || c == '<' || c == '>') {
                lex += c;
                i++;
-               estado = 4;
+               estado = 3;
             } else if (c == '!') {
                lex += c;
                i++;
-               estado = 5;
+               estado = 4;
             } else if (c == '/') {
                lex += c;
                i++;
-               estado = 6;
+               estado = 5;
             } else if (c == '\'') {
                lex += c;
                i++;
-               estado = 7;
+               estado = 6;
             } else if (c == '"') {
                lex += c;
                i++;
-               estado = 9;
+               estado = 8;
                System.out.println(c + " compilado, estado: " + estado);
             } else if (c == '\n' || c == ' ') {
                estado = 0;
@@ -196,21 +196,10 @@ public class Main {
             }
             break;
 
-            // case 1, 2, 3: comentário
-         /* case 1:
-            System.out.println(c + " case 1");
-            if (c == '{') {
-               i++;
-               c = lerChar(i);
-               System.out.println(c + " compilado");
-               estado = 2;
-            }
-            break; */
-
-         case 2:
+         case 1:
          System.out.println(c + " case 2");
             if (c == '*') {
-               estado = 3;
+               estado = 2;
                comentario = true;
                i++;
                System.out.println(c + " compilado else if");
@@ -218,9 +207,8 @@ public class Main {
             } else if ((Character.isLetter(c) || searchAlfabeto(c, alfabeto_simbolos) == true || c == ' ')
                   && comentario) {
                i++;
-               estado = 2;
+               estado = 1;
                System.out.println(c + " compilado");
-               c = lerChar(i);
             } else if (i == file.length()) {
                i = file.length();
                System.out.println(c + " compilado");
@@ -230,10 +218,10 @@ public class Main {
             }
             break;
 
-         case 3:
+         case 2:
          System.out.println(c + " case 3");
             if (c != '}') {
-               estado = 2; // se não encontrar o } significa que o * fazia parte do comentario, volta e
+               estado = 1; // se não encontrar o } significa que o * fazia parte do comentario, volta e
                            // continuar a ler
             } else if (c == '}') {
                estado = 0; // aqui termina de ler o comentario e volta pro estadio inicial
@@ -243,8 +231,8 @@ public class Main {
             break;
 
             // >= <= ==
-         case 4:
-         System.out.println(c + " case 4");
+         case 3:
+         System.out.println(c + " case 3");
             if (c == '=') {
                lex += c;
             } else {
@@ -253,8 +241,8 @@ public class Main {
             break;
 
             // !=
-         case 5:
-         System.out.println(c + " case 5");
+         case 4:
+         System.out.println(c + " case 4");
             if (c == '=') {
                lex += c;
             } else if (c != '=') {
@@ -263,8 +251,8 @@ public class Main {
             }
             break;
 
-         case 6:
-         System.out.println(c + " case 6");
+         case 5:
+         System.out.println(c + " case 5");
             if (c == '/') {
                lex += c;
             } else {
@@ -272,20 +260,20 @@ public class Main {
             }
             break;
             // char
-         case 7:
-         System.out.println(c + " case 7");
+         case 6:
+         System.out.println(c + " case 6");
             if (searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c)) {
                lex += c;
                i++;
-               estado = 8;
+               estado = 7;
             } else {
                System.out.println("ERRO: Caractere invalido");
                i = file.length();
             }
             break;
 
-         case 8:
-         System.out.println(c + " case 8");
+         case 7:
+         System.out.println(c + " case 7");
             if (c == '\'') {
                lex += c;
                i++;
@@ -297,13 +285,13 @@ public class Main {
             break;
 
             // string
-         case 9:
-         System.out.println(c + " case 9");
+         case 8:
+         System.out.println(c + " case 8");
             System.out.println(c + "char, estado: " + estado);
             if (searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c)) {
                lex += c;
                i++;
-               estado = 10;
+               estado = 9;
                System.out.println(c + " compilado");
             } else {
                System.out.println("ERRO: Caractere invalido");
@@ -311,8 +299,8 @@ public class Main {
             }
             break;
 
-         case 10:
-         System.out.println(c + " case 10");
+         case 9:
+         System.out.println(c + " case 9");
             if (c == '"') {
                lex += c;
                i++;
@@ -321,7 +309,7 @@ public class Main {
             } else if (searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c)) {
                lex += c;
                i++;
-               estado = 10;
+               estado = 9;
                System.out.println(c + " compilado");
             } else {
                System.out.println("ERRO: caractere não esperado");
