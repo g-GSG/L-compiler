@@ -103,7 +103,7 @@ public class Main {
          "or", "not", "begin", "end", "readln", "string", "write", "writeln", "TRUE", "FALSE", "boolean", "==", "!=",
          ">=", "<=", "//" };
    private static String[] alfabeto_caracteres = { " ", "_", ".", ",", ";", ":", "(", ")", "[", "]", "{", "}", "+", "-",
-         "\"", "'", "/", "\\", "@", "&", "%", "!", "?", ">", "<", "=", "*" };
+         "\"", "'", "/", "\\", "@", "&", "%", "!", "?", ">", "<", "=", "*" };   
    private static String[] letras_hexa = { "A", "B", "C", "D", "E", "F" };
 
    public static HashMap<String, Simbolo> tabela = new HashMap<>();
@@ -115,7 +115,8 @@ public class Main {
          return false;
    }
 
-   public static String readFile() {
+
+   public static String readFile() { 
       String result = "";
       String temp = "";
 
