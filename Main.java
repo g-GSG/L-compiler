@@ -103,30 +103,34 @@ public class Main {
          "or", "not", "begin", "end", "readln", "string", "write", "writeln", "TRUE", "FALSE", "boolean", "==", "!=",
          ">=", "<=", "//" };
    private static String[] alfabeto_caracteres = { " ", "_", ".", ",", ";", ":", "(", ")", "[", "]", "{", "}", "+", "-",
-         "\"", "'", "/", "\\", "@", "&", "%", "!", "?", ">", "<", "=", "*" };
-   private static String[] letras_hexa = { "A", "B", "C", "D", "E", "F"};
+         "\"", "'", "/", "\\", "@", "&", "%", "!", "?", ">", "<", "=", "*" };   
+   private static String[] letras_hexa = { "A", "B", "C", "D", "E", "F" };
 
    public static HashMap<String, Simbolo> tabela = new HashMap<>();
 
-   public static boolean isLetter(char c){
-      if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) return true;
-      else return false;
+   public static boolean isLetter(char c) {
+      if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+         return true;
+      else
+         return false;
    }
 
-   public static String readFile() {
+
+   public static String readFile() { 
       String result = "";
       String temp = "";
 
       try {
          linhasArquivo = new ArrayList<String>();
          Scanner sc = new Scanner(System.in);
-         // sc = new Scanner(new File(file));
          while (sc.hasNext()) {
             temp = sc.nextLine();
             linhasArquivo.add(temp);
             result = result + temp + "\n";
             linhas++;
          }
+
+         // System.out.print(result);
 
          sc.close();
       } catch (Exception e) {
@@ -164,12 +168,12 @@ public class Main {
          char c = file.charAt(i);
          if (searchAlfabeto(c, alfabeto_caracteres) == false && isLetter(c) == false && Character.isDigit(c) == false && c != '\n') {
             error = true;
-            System.out.println((linhas + 1) + "\ncaractere invalido.");
+            System.out.print((linhas) + "\ncaractere invalido.");
             i = file.length();
          } else {
             switch (estado) {
             case 0:
-               //System.out.println("Case 0 c: " + c);
+              // System.out.println("Case 0 c: " + c);
                // Constante Hexadecimal ou Identificador
                if (searchAlfabeto(c, letras_hexa)) {
                   lex += c;
@@ -244,7 +248,11 @@ public class Main {
                   //System.out.println("quebra de linha");
 
                } else {
-                  //System.out.println("Fim de arquivo.");
+                  error = true;
+                  if(lex.length() == 0){
+                     lex += c;
+                  }
+                  System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
                   i = file.length();
                }
             break;
@@ -253,11 +261,14 @@ public class Main {
                if (c == '*') {
                   estado = 2;
                   i++;
+                  lex += c;
                   //System.out.println(c + " compilado");
                } else if (i == file.length()) {
-                  i = file.length();
+                  error = true;
+                  System.out.print((linhas) + "\nfim de arquivo nao esperado.");
                } else {
-                  System.out.println("ERRO: token nao esperado");
+                  error = true;
+                  System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
                   i = file.length();
                }
             break;
@@ -265,23 +276,29 @@ public class Main {
             case 2:
                /* aparentemente eh coisa com comentario que nao eh fechado, 
                vamo ter que pensar nas possibilidades de alguem errar a sintaxe de um comentario */
-               //System.out.println("case 2 c: " + c);
+               //System.out.println("case 2 c:" + c);
                if (c == '*') {
                   estado = 3;
                   i++; 
+                  lex += c;
                   //System.out.println(c + " compilado");
-               } else if (isLetter(c) || Character.isDigit(c) || searchAlfabeto(c, alfabeto_simbolos) == true || c == ' ' || c == '\n' || c == '\r') {
+               } else if (isLetter(c) || Character.isDigit(c) || searchAlfabeto(c, alfabeto_caracteres) == true || c == ' ' || c == '\n' || c == '\r') {
                   i++;
-                  estado = 2;
                   if (c == '\n' || c == '\r') linhas++;
-                  if (i == file.length()){
-                     error = true;
-                     System.out.println((linhas + 1) + "\nfim de arquivo nao esperado.");
-                  }
-                  //System.out.println(c + " compilado");
+                  lex += c;
+                  estado = 2;
+                 // System.out.println(c + " compilado");
+                  System.out.println("lexema: " + lex);
                } else {
+                  //System.out.println(c + "teste");
                   error = true;
-                  System.out.println((linhas + 1) + "\nfim de arquivo nao esperado.");
+                  System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
+                  i = file.length();
+               }
+
+               if (i >= file.length()){
+                  error = true;
+                  System.out.print((linhas) + "\nfim de arquivo nao esperado.");
                   i = file.length();
                }
             break;
@@ -290,17 +307,27 @@ public class Main {
                if (c == '*') {
                   estado = 3;
                   i++;
+                  lex += c;
                   //System.out.println(c + " compilado");
                } else if (c != '*' && c != '}') {
                   estado = 2;
                   i++;
+                  lex += c;
+                  if (c == '\n' || c == '\r') linhas++;
                   //System.out.println(c + " compilado");
                } else if (c == '}') {
                   estado = 0;
                   i++;
+                  lex = "";
                   //System.out.println(c + " compilado");
                } else {
-                  System.out.println("ERRO: token não esperado");
+                  error = true;
+                  System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
+                  i = file.length();
+               }
+               if (i == file.length()){
+                  error = true;
+                  System.out.print((linhas) + "\nfim de arquivo nao esperado.");
                }
             break;
 
@@ -328,8 +355,10 @@ public class Main {
                   estado = 30;
                   //System.out.println(c + " compilado");
                } else if (c != '=') {
-                  System.out.println("ERRO: Token inesperado ou faltante");
+                  error = true;
+                  System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
                   i = file.length();
+                  lex = "";
                }
             break;
 
@@ -348,33 +377,44 @@ public class Main {
 
          //Char
             case 7:
-               if (searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c)  || Character.isLetter(c)) {
-                  lex += c;
-                  i++;
-                  estado = 8;
-                  //System.out.println(c + " compilado");
-               } else {
-                  System.out.println("ERRO: Caractere invalido");
-                  i = file.length();
-               }
-            break;
 
-            case 8:
-               if (c == '\'') {
-                  lex += c;
-                  simbolo.setToken("char");
-                  i++;
-                  estado = 30;
-                  //System.out.println(c + " compilado");
-               } else {
-                  System.out.println("ERRO: caractere não esperado");
-                  i = file.length();
-               }
-            break;
+            if(i >= file.length()){
+               error = true;
+               System.out.print((linhas) + "\nfim de arquivo nao esperado.");
+            }else if ((searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c)  || isLetter(c)) && c != ' ') {
+               lex += c;
+               i++;
+               estado = 8;
+               //System.out.println(c + " compilado");
+            } else {
+               error = true;
+               System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
+               i = file.length();
+               lex = "";
+            }
+         break;
+
+         case 8:
+            if(i >= file.length()){
+               error = true;
+               System.out.print((linhas) + "\nfim de arquivo nao esperado.");
+            }else if (c == '\'') {
+               lex += c;
+               simbolo.setToken("char");
+               i++;
+               estado = 30;
+               //System.out.println(c + " compilado");
+            } else {
+               error = true;
+               System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
+               i = file.length();
+               lex = "";
+            }
+         break;
             
                // string
             case 9:
-               if (c != '"' && (searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c)  || Character.isLetter(c))) {
+               if (c != '"' && (searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c)  || isLetter(c))) {
                   lex += c;
                   i++;
                   estado = 9;
@@ -384,17 +424,20 @@ public class Main {
                   i++;
                   estado = 30;
                }else{
-                  System.out.println("ERRO: Caractere invalido");
+                  error = true;               
+                  System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
                   i = file.length();
+                  lex = "";
                }
             break;
 
             // identificador
             case 10:
-               if ((c == '_' || Character.isLetter(c) || Character.isDigit(c))) {
+               if ((c == '_' || isLetter(c) || Character.isDigit(c))) {
                   lex += c;
                   i++;
-               } else if (c != '_' && Character.isLetter(c) == false && Character.isDigit(c) == false){
+                  estado = 10;
+               } else if (c != '_' && isLetter(c) == false && Character.isDigit(c) == false){
                   estado = 30;
                }
             break;
@@ -404,12 +447,11 @@ public class Main {
                   lex += c;
                   i++;
                   estado = 16;
-               } else if(Character.isLetter(c) || c == '_') {
+               } else if(isLetter(c) || c == '_') {
                   lex += c;
                   i++;
                   estado = 10;
                } else{
-                  i++;
                   estado = 30;
                }
             break;
@@ -419,7 +461,7 @@ public class Main {
                   lex += c;
                   i++;
                   estado = 18;
-               } else if ((c == '_' || Character.isLetter(c) || Character.isDigit(c))){
+               } else if ((c == '_' || isLetter(c) || Character.isDigit(c))){
                   lex += c;
                   i++;
                   estado = 10;
@@ -429,7 +471,7 @@ public class Main {
             break;
 
             case 18:
-               if ((c == '_' || Character.isLetter(c) || Character.isDigit(c))){
+               if ((c == '_' || isLetter(c) || Character.isDigit(c))){
                   lex += c;
                   i++;
                   estado = 10;
@@ -444,8 +486,10 @@ public class Main {
                   i++;
                   estado = 20;
                }else{
-                  System.out.println("ERRO: Caractere invalido");
+                  error = true;
+                  System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
                   i = file.length();
+                  lex = "";
                }
             break;
 
@@ -456,6 +500,7 @@ public class Main {
                   estado = 20;
                }else{
                   estado = 30;
+                  
                }
             break;
 
@@ -498,14 +543,17 @@ public class Main {
                   i++;
                   estado = 30;
                }else{
-                  System.out.println("ERRO: Caractere invalido");
+                  error = true;
+                  System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
                   i = file.length();
+                  lex = "";
                }
                break;
                
             case 30:
                estado = 0;
-               // System.out.println("estado final");
+               //System.out.println(lex);
+               lex = "";
                // return simbolo;
             break;
             }
@@ -530,6 +578,6 @@ public class Main {
       // inicia o analisador lexico
       token = analisadorLexico();
 
-      if (error == false) System.out.print(linhas + " linhas compiladas.");
+      if (error == false) System.out.print((linhasArquivo.size()) + " linhas compiladas.");
    }
 }
