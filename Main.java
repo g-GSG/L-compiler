@@ -92,7 +92,7 @@ public class Main {
    private static Simbolo token = new Simbolo();
    private static String file = readFile();
    static BufferedReader arquivo;
-   private static int linhas = 1;
+   private static int linhas = 0;
    private static int index = 0;
    private static boolean error = false;
 
@@ -104,13 +104,15 @@ public class Main {
          ">=", "<=", "//" };
    private static String[] alfabeto_caracteres = { " ", "_", ".", ",", ";", ":", "(", ")", "[", "]", "{", "}", "+", "-",
          "\"", "'", "/", "\\", "@", "&", "%", "!", "?", ">", "<", "=", "*" };
-   private static String[] letras_hexa = { "A", "B", "C", "D", "E", "F"};
+   private static String[] letras_hexa = { "A", "B", "C", "D", "E", "F" };
 
    public static HashMap<String, Simbolo> tabela = new HashMap<>();
 
-   public static boolean isLetter(char c){
-      if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) return true;
-      else return false;
+   public static boolean isLetter(char c) {
+      if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+         return true;
+      else
+         return false;
    }
 
    public static String readFile() {
@@ -127,7 +129,7 @@ public class Main {
             linhas++;
          }
 
-         //System.out.print(result);
+         // System.out.print(result);
 
          sc.close();
       } catch (Exception e) {
@@ -160,7 +162,6 @@ public class Main {
       int estado = 0;
       String lex = "";
       int i = 0;
-
 
       while (i < file.length()) {
          char c = file.charAt(i);
