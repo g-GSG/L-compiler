@@ -147,6 +147,7 @@ public class Main {
       return file.charAt(i);
    }
 
+   /* ANALISADOR LÉXICO */
    public static Simbolo analisadorLexico() {
       Simbolo simbolo = new Simbolo();
       int estado = 0;
@@ -308,7 +309,287 @@ public class Main {
 
    }
 
+   /* ANALISADOR SINTÁTICO */
+
+   public static void ct(String token_esperado) {
+      if (token.getToken().equals(token_esperado)) {
+         token = analisadorLexico();
+         // triar um erro de fim de arquivo aqui
+      } else if (token.getToken().equals("")) {
+         // triar um erro de fim de arquivo aqui
+      } else {
+         System.out.println(linhas);
+         System.out.println("token nao esperado [" + token.getLexema() + "].");
+      }
+   }
+
+   /*
+    * Gramática S-> {Declaração}* {Comandos}* EoF
+    */
+   public static void S() {
+      try {
+         while (token.getToken().equals("integer") || token.getToken().equals("const")
+               || token.getToken().equals("char") || token.getToken().equals("real")
+               || token.getToken().equals("string") || token.getToken().equals("boolean")) {
+            Declaracao();
+         }
+         while (token.getToken().equals("id") || token.getToken().equals("while") || token.getToken().equals("if")
+               || token.getToken().equals(";") || token.getToken().equals("readln")
+               || token.getToken().equals("writeln") || token.getToken().equals("write")) {
+            Comandos();
+         }
+      } catch (Exception e) {
+      }
+   }
+
+   /*
+    * Declaração -> Variaveis | Constantes
+    */
+   public static void Declaracao() {
+      if (token.getToken().equals("integer") || token.getToken().equals("char") || token.getToken().equals("real")
+            || token.getToken().equals("string") || token.getToken().equals("boolean")) {
+         Variaveis();
+      } else if (token.getToken().equals("const")) {
+         Constantes();
+      }
+   }
+
+   /*
+    * VARIAVEIS {(int | char | boolean | real | string) id1[ = [-] constante]
+    * {,id2[ = [-] constante ] }* ;}
+    */
+   public static void Variaveis() {
+      while (token.getToken().equals("integer") || token.getToken().equals("char") || token.getToken().equals("real")
+            || token.getToken().equals("string") || token.getToken().equals("boolean")) {
+         ct(token.getToken());
+         ct("id");
+         if (token.getToken().equals("=")) {
+            ct("=");
+            if (token.getToken().equals("-")) {
+               ct("-");
+            }
+            // ct(const) -> valor constante
+         }
+         while (token.getToken().equals(",")) {
+            ct(",");
+            ct("id");
+            if (token.getToken().equals("=")) {
+               ct("=");
+               if (token.getToken().equals("-")) {
+                  ct("-");
+               }
+               // ct(const) -> valor constante
+            }
+         }
+         ct(";");
+
+      }
+   }
+
+   /*
+    * CONSTANTES {const id = [-] constante;}*
+    */
+   public static void Constantes() {
+      while (token.getToken().equals("const")) {
+         ct("const");
+         ct("id");
+         ct("=");
+         if (token.getToken().equals("-")) {
+            ct("-");
+         }
+         // ct(valor_constante)
+         ct(";");
+      }
+   }
+
+   /*
+    * COMANDOS Comandos disponiveis: atribuicao, repeticao, condicional, nulo,
+    * leitura, escrita
+    */
+   public static void Comandos() {
+      if (token.getToken().equals("id")) {
+         atribuicao();
+      } else if (token.getToken().equals("while")) {
+         repeticao();
+      } else if (token.getToken().equals("if")) {
+         condicional();
+      } else if (token.getToken().equals(";")) {
+         ct(";");
+      } else if (token.getToken().equals("readln")) {
+         leitura();
+      } else if (token.getToken().equals("writeln") || token.getToken().equals("write")) {
+         escrita();
+      }
+   }
+
+   // Comando de atribuição
+   // id = Exp ; | id “[“Exp”]” = Exp ;
+   public static void atribuicao() {
+      ct("id");
+      if (token.getToken().equals("=")) {
+         ct("=");
+         // EXP, não sei oque fazer com ele a não ser chorar
+      } else if (token.getToken().equals("[")) {
+         ct("[");
+         Exp();
+         ct("]");
+         ct("=");
+         Exp();
+      }
+      ct(";");
+   }
+
+   // Comando de repeticao
+   // while Exp (Comandos | Lista_Comandos)
+   public static void repeticao() {
+      ct("while");
+      Exp();
+      if (token.getToken().equals("begin")) {
+         ct("begin");
+         while (token.getToken().equals("id") || token.getToken().equals("while") || token.getToken().equals("if")
+               || token.getToken().equals(";") || token.getToken().equals("readln")
+               || token.getToken().equals("writeln") || token.getToken().equals("write")) {
+            Comandos();
+         }
+         ct("end");
+      } else {
+         Comandos();
+      }
+   }
+
+   // Comando condicional
+   // if Exp (Comandos | Lista_Comandos) [else (Comandos | Lista_Comandos)]
+   public static void condicional() {
+      ct("if");
+      Exp();
+      if (token.getToken().equals("begin")) {
+         ct("begin");
+         while (token.getToken().equals("id") || token.getToken().equals("while") || token.getToken().equals("if")
+               || token.getToken().equals(";") || token.getToken().equals("readln")
+               || token.getToken().equals("writeln") || token.getToken().equals("write")) {
+            Comandos();
+         }
+         ct("end");
+      } else {
+         Comandos();
+      }
+      if (token.getToken().equals("else")) {
+         ct("else");
+         if (token.getToken().equals("begin")) {
+            ct("begin");
+            while (token.getToken().equals("id") || token.getToken().equals("while") || token.getToken().equals("if")
+                  || token.getToken().equals(";") || token.getToken().equals("readln")
+                  || token.getToken().equals("writeln") || token.getToken().equals("write")) {
+               Comandos();
+            }
+            ct("end");
+         } else {
+            Comandos();
+         }
+      }
+   }
+
+   // Comando de leitura
+   // readln “(“ id “)”;
+   public static void leitura() {
+      ct("readln");
+      ct("(");
+      ct("id");
+      ct(")");
+   }
+
+   // Comando de impressao
+   // (write | writeln) “(“ Exp {,Exp}* “)”;
+   public static void escrita() {
+      if (token.getToken().equals("write")) {
+         ct("write");
+      } else {
+         ct("writeln");
+      }
+      ct("(");
+      Exp();
+      while (token.getToken().equals(",")) {
+         ct(",");
+         Exp();
+      }
+      ct(")");
+      ct(";");
+   }
+
+   // EXP
+   // Exp_Soma1 [(== | != | < | > | <= | >=) Exp_Soma2]
+   public static void Exp() {
+      Exp_soma(); // exp soma1
+      if (token.getToken().equals("==") || token.getToken().equals("!=") || token.getToken().equals("<")
+            || token.getToken().equals(">") || token.getToken().equals("<=") || token.getToken().equals(">=")) {
+         ct(token.getToken());
+         Exp_soma(); // exp soma 2
+      }
+   }
+
+   // EXP SOMA
+   // [+|-] Exp_Mult1 {(+ | - | or) Exp_Mult2 }
+   public static void Exp_soma() {
+      if (token.getToken().equals("+")) {
+         ct("+");
+      } else if (token.getToken().equals("-")) {
+         ct("-");
+      }
+      Exp_mult(); // exp mult1
+      while (token.getToken().equals("+") || token.getToken().equals("-") || token.getToken().equals("or")) {
+         ct(token.getToken());
+         Exp_mult(); // exp mult 2
+      }
+   }
+
+   // EXP MULT
+   // Fator1{ (* | / | and | // | %) Fator2 }
+   public static void Exp_mult() {
+      Fator(); // fator 1
+      while (token.getToken().equals("*") || token.getToken().equals("/") || token.getToken().equals("and")
+            || token.getToken().equals("//") || token.getToken().equals("%")) {
+         ct(token.getToken());
+         Fator(); // fator2
+      }
+
+   }
+
+   // FATOR
+   // id[“[“ Exp “]”] |constante | not Fator1 | “(“ Exp “)” | integer “(“ Exp “)” |
+   // real “(“ Exp “)”
+   public static void Fator() {
+      // tem de retornar um simbolo, não sei se é no semantico ou agora no sintatico
+      if (token.getToken().equals("id")) {
+         ct("id");
+         if (token.getToken().equals("[")) {
+            ct("[");
+            Exp();
+            ct("]");
+         } else if (token.getToken().equals("not")) {
+            ct("not");
+            Fator();
+         } else if (token.getToken().equals("(")) {
+            ct("(");
+            Exp();
+            ct(")");
+         } else if (token.getToken().equals("integer")) {
+            ct("integer");
+            ct("(");
+            Exp();
+            ct(")");
+         } else if (token.getToken().equals("real")) {
+            ct("real");
+            ct("(");
+            Exp();
+            ct(")");
+         } else {
+            // ct(valor_constante) ??
+         }
+      }
+   }
+
    public static void main(String[] args) {
+
       // popular a tabela de símbolos com palavras reservadas e símbolos
       for (String palavra : alfabeto_simbolos) {
          tabela.put(palavra.toLowerCase(), new Simbolo(palavra, palavra, "", "", 0, 0, ""));
@@ -321,7 +602,7 @@ public class Main {
       }
 
       // inicia o analisador lexico
-      token = analisadorLexico();
+      S();
 
       System.out.print(linhas + " linhas compiladas.");
    }
