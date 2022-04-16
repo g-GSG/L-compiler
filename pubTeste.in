@@ -1,2 +1,18 @@
-'
-'
+{*Exemplo de Programa na linguagem L*}
+
+integer _123 = 20.;
+const teste = 123;
+_123 = 10.+.02*12;
+integer n=.923;
+string nome;
+const MAXITER=10;
+
+write("Digite seu nome: ");
+readln(nome);
+
+real percentual;
+while n<=MAXITER begin
+  percentual=real(n)/MAXITER;
+  writeln(percentual,": Ola' ",nome);
+  n=n+1;
+end 
