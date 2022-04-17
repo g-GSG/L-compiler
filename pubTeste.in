@@ -1,10 +1,6 @@
-{*Exemplo de Programa na linguagem L*}
+{* Exemplo de Programa na linguagem L *}
 
-const teste = AFh;
-string abc = "abcd";
-abc[0] = 'c';
-integer _123 = 20.;
-integer n=.923;
+integer n=1;
 string nome;
 const MAXITER=10;
 
@@ -12,8 +8,9 @@ write("Digite seu nome: ");
 readln(nome);
 
 real percentual;
+if n<1 ( ; else ( ; )
 while n<=MAXITER begin
   percentual=real(n)/MAXITER;
   writeln(percentual,": Ola' ",nome);
   n=n+1;
-end;
+end
