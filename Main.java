@@ -141,7 +141,7 @@ public class Main {
    }
 
    public static Simbolo searchTabela(String tok) {
-      return tabela.get(tok.toLowerCase()); // retorna null se não estiver presente
+      return tabela.get(tok.toLowerCase()); // retorna null se nao estiver presente
    }
 
    public static boolean searchAlfabeto(char tok, String[] alfabeto) {
@@ -158,7 +158,7 @@ public class Main {
       return file.charAt(i);
    }
 
-   /* ANALISADOR LÉXICO */
+   /* ANALISADOR LEXICO */
    public static Simbolo analisadorLexico() {
       Simbolo simbolo = new Simbolo();
       int estado = 0;
@@ -174,7 +174,7 @@ public class Main {
          }
 
          char c = file.charAt(index);
-         // System.out.println("Case 0 c: " + c + "|| index: " + index);
+         System.out.println("Case 0 c: " + c + "|| index: " + index);
          if (searchAlfabeto(c, alfabeto_caracteres) == false && isLetter(c) == false && Character.isDigit(c) == false
                && c != '\n' && c != '\r') {
             error = true;
@@ -215,7 +215,7 @@ public class Main {
                      estado = 5;
                      // System.out.println(c + " compilado");
 
-                     // Divisao ou quociente da divisão de 2 inteiros
+                     // Divisao ou quociente da divisao de 2 inteiros
                   } else if (c == '/') {
                      lex += c;
                      index++;
@@ -572,10 +572,14 @@ public class Main {
                   break;
 
                case 22:
-                  if (c == '.' || Character.isDigit(c)) {
+                  if (c == '.') {
                      lex += c;
                      index++;
                      estado = 20;
+                  } else if(Character.isDigit(c)){
+                     lex += c;
+                     index++;
+                     estado = 24;
                   } else if (c == 'h') {
                      lex += c;
                      index++;
@@ -588,6 +592,22 @@ public class Main {
                      simbolo.setLexema(lex);
                   }
                   break;
+
+               case 24:
+                  if (c == '.') {
+                     lex += c;
+                     index++;
+                     estado = 20;
+                  } else if (Character.isDigit(c)) {
+                     lex += c;
+                     index++;
+                     estado = 24;
+                  }  else {
+                     estado = 30;
+                     simbolo.setToken("const");
+                     simbolo.setLexema(lex);
+                  }
+               break;
 
                case 23:
                   if (c == 'h') {
@@ -644,7 +664,7 @@ public class Main {
          if (error == false) {
             error = true;
             System.out.println(linhas);
-            System.out.println("token nao esperado [" + token.getLexema() + "].");
+            System.out.print("token nao esperado [" + token.getLexema() + "].");
             System.exit(0);
          }
       }
@@ -657,6 +677,7 @@ public class Main {
     */
    public static void S() {
       token = analisadorLexico();
+      //System.out.println("token: " + token.getToken());
       // System.out.println("token lido:" + token.getToken());
       try {
          while (token.getToken().equals("integer") || token.getToken().equals("const")
@@ -666,17 +687,26 @@ public class Main {
                || token.getToken().equals("while") || token.getToken().equals("if")
                || token.getToken().equals(";") || token.getToken().equals("readln")
                || token.getToken().equals("writeln") || token.getToken().equals("write")) {
+
             while (token.getToken().equals("integer") || token.getToken().equals("const")
                   || token.getToken().equals("char") || token.getToken().equals("real")
                   || token.getToken().equals("string") || token.getToken().equals("boolean")) {
                // System.out.println("while declaracao");
                Declaracao();
             }
+
             while (token.getToken().equals("id") || token.getToken().equals("while") || token.getToken().equals("if")
                   || token.getToken().equals(";") || token.getToken().equals("readln")
                   || token.getToken().equals("writeln") || token.getToken().equals("write")) {
                // System.out.println("while comandos");
                Comandos();
+            }
+
+            while (token.getToken().equals("end") || token.getToken().equals("begin")){
+               error = true;
+               System.out.println(linhas);
+               System.out.print("token nao esperado [" + token.getLexema() + "].");
+               System.exit(0);
             }
          }
       } catch (Exception e) {
@@ -687,6 +717,7 @@ public class Main {
     * Declaracao -> Variaveis | Constantes
     */
    public static void Declaracao() {
+      //System.out.println("Declaracao token: " + token.getToken());
       if (token.getToken().equals("integer") || token.getToken().equals("char") || token.getToken().equals("real")
             || token.getToken().equals("string") || token.getToken().equals("boolean")) {
          // System.out.println("Variaveis " + token.getToken());
@@ -702,6 +733,7 @@ public class Main {
     * {,id2[ = [-] constante ] }* ;}
     */
    public static void Variaveis() {
+      // System.out.println("Variaveis token: " + token.getToken());
       while (token.getToken().equals("integer") || token.getToken().equals("char") || token.getToken().equals("real")
             || token.getToken().equals("string") || token.getToken().equals("boolean")) {
          // System.out.println("Variaveis " + token.getToken());
@@ -734,6 +766,7 @@ public class Main {
     * CONSTANTES {const id = [-] constante;}*
     */
    public static void Constantes() {
+      // System.out.println("Constantes token: " + token.getToken());
       while (token.getToken().equals("const")) {
          ct("const");
          ct("id");
@@ -751,6 +784,7 @@ public class Main {
     * leitura, escrita
     */
    public static void Comandos() {
+      // System.out.println("Comandos token: " + token.getToken());
       if (token.getToken().equals("id")) {
          // System.out.println("entrou atribuicao");
          atribuicao();
@@ -792,6 +826,7 @@ public class Main {
    // Comando de repeticao
    // while Exp (Comandos | Lista_Comandos)
    public static void repeticao() {
+      // System.out.println("repeticao token: " + token.getToken());
       ct("while");
       Exp();
       if (token.getToken().equals("begin")) {
@@ -811,6 +846,7 @@ public class Main {
    // Comando condicional
    // if Exp (Comandos | Lista_Comandos) [else (Comandos | Lista_Comandos)]
    public static void condicional() {
+      // System.out.println("condicional token: " + token.getToken());
       ct("if");
       Exp();
       if (token.getToken().equals("begin")) {
@@ -871,6 +907,7 @@ public class Main {
    // EXP
    // Exp_Soma1 [(== | != | < | > | <= | >=) Exp_Soma2]
    public static void Exp() {
+      // System.out.println("Exp token: " + token.getToken());
       // System.out.println("antes do Exp_soma");
       Exp_soma(); // exp soma1
       // System.out.println("depois do Exp_soma");
@@ -922,7 +959,7 @@ public class Main {
    // real "(" Exp ")"
    public static void Fator() {
       // System.out.println("entrou no fator");
-      // tem de retornar um simbolo, não sei se é no semantico ou agora no sintatico
+      // tem de retornar um simbolo, nao sei se eh no semantico ou agora no sintatico
       if (token.getToken().equals("id")) {
          ct("id");
          if (token.getToken().equals("[")) {
@@ -955,7 +992,7 @@ public class Main {
 
    public static void main(String[] args) {
 
-      // popular a tabela de símbolos com palavras reservadas e simbolos
+      // popular a tabela de simbolos com palavras reservadas e simbolos
       for (String palavra : alfabeto_simbolos) {
          tabela.put(palavra.toLowerCase(), new Simbolo(palavra, palavra, "", "", 0, 0, ""));
          index1++;
@@ -972,6 +1009,6 @@ public class Main {
       S();
 
       if (error == false)
-         System.out.print((linhasArquivo.size()) + " linhas compiladas.");
+         System.out.print((linhasArquivo.size() + 1) + " linhas compiladas.");
    }
 }
