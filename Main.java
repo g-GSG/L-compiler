@@ -174,7 +174,7 @@ public class Main {
          }
 
          char c = file.charAt(index);
-         // System.out.println("Case 0 c: " + c + "|| index: " + index);
+         System.out.println("Case 0 c: " + c + "|| index: " + index);
          if (searchAlfabeto(c, alfabeto_caracteres) == false && isLetter(c) == false && Character.isDigit(c) == false
                && c != '\n' && c != '\r') {
             error = true;
@@ -572,10 +572,14 @@ public class Main {
                   break;
 
                case 22:
-                  if (c == '.' || Character.isDigit(c)) {
+                  if (c == '.') {
                      lex += c;
                      index++;
                      estado = 20;
+                  } else if(Character.isDigit(c)){
+                     lex += c;
+                     index++;
+                     estado = 24;
                   } else if (c == 'h') {
                      lex += c;
                      index++;
@@ -588,6 +592,22 @@ public class Main {
                      simbolo.setLexema(lex);
                   }
                   break;
+
+               case 24:
+                  if (c == '.') {
+                     lex += c;
+                     index++;
+                     estado = 20;
+                  } else if (Character.isDigit(c)) {
+                     lex += c;
+                     index++;
+                     estado = 24;
+                  }  else {
+                     estado = 30;
+                     simbolo.setToken("const");
+                     simbolo.setLexema(lex);
+                  }
+               break;
 
                case 23:
                   if (c == 'h') {
@@ -644,7 +664,7 @@ public class Main {
          if (error == false) {
             error = true;
             System.out.println(linhas);
-            System.out.println("token nao esperado [" + token.getLexema() + "].");
+            System.out.print("token nao esperado [" + token.getLexema() + "].");
             System.exit(0);
          }
       }
@@ -667,22 +687,25 @@ public class Main {
                || token.getToken().equals("while") || token.getToken().equals("if")
                || token.getToken().equals(";") || token.getToken().equals("readln")
                || token.getToken().equals("writeln") || token.getToken().equals("write")) {
+
             while (token.getToken().equals("integer") || token.getToken().equals("const")
                   || token.getToken().equals("char") || token.getToken().equals("real")
                   || token.getToken().equals("string") || token.getToken().equals("boolean")) {
                // System.out.println("while declaracao");
                Declaracao();
             }
+
             while (token.getToken().equals("id") || token.getToken().equals("while") || token.getToken().equals("if")
                   || token.getToken().equals(";") || token.getToken().equals("readln")
                   || token.getToken().equals("writeln") || token.getToken().equals("write")) {
                // System.out.println("while comandos");
                Comandos();
             }
+
             while (token.getToken().equals("end") || token.getToken().equals("begin")){
                error = true;
                System.out.println(linhas);
-               System.out.println("token nao esperado [" + token.getLexema() + "].");
+               System.out.print("token nao esperado [" + token.getLexema() + "].");
                System.exit(0);
             }
          }
@@ -986,6 +1009,6 @@ public class Main {
       S();
 
       if (error == false)
-         System.out.print((linhasArquivo.size()) + " linhas compiladas.");
+         System.out.print((linhasArquivo.size() + 1) + " linhas compiladas.");
    }
 }
