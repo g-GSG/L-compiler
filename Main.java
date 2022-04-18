@@ -101,12 +101,13 @@ class Simbolo {
 public class Main {
    private static ArrayList<String> linhasArquivo;
    private static Simbolo token = new Simbolo();
-   private static String file = readFile();
-   static BufferedReader arquivo;
+   private static String[] file = readFile();
+   static BufferedReader arquivo; // pode tirar, nao?
    private static int linhas = 1;
    private static int index = 0;
    private static int indexTabela = 0;
    private static boolean error = false;
+   private static int numLinhasArquivo;
 
    // Declaracao dos caracteres que fazem parte dos tokens da linguagem
    private static String[] alfabeto_simbolos = { "_", ".", ",", ";", "(", ")", "[", "]", "+", "-", "'", "\"",
@@ -133,25 +134,44 @@ public class Main {
          return false;
    }
 
-   public static String readFile() {
+   public static String[] readFile() {
       String result = "";
-      String temp = "";
+      int auxLinha = 1;
 
       try {
          linhasArquivo = new ArrayList<String>();
-         Scanner sc = new Scanner(System.in);
-         while (sc.hasNext()) {
-            temp = sc.nextLine();
-            linhasArquivo.add(temp);
-            result = result + temp + "\n";
-            linhas++;
+         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+         for (int t = br.read(); t != -1; t = br.read()) {
+
+            if ((char) t == '\n') {
+               result = result + (char) t;
+               auxLinha += 1; // Variavel para ter controle de quantas linhas tem no arquivo, mesmo as nulas
+               linhasArquivo.add(result);
+            } else if ((char) t == '\r') {
+            } else {
+               char aux = (char) t;
+               result = result + aux;
+            }
          }
-         sc.close();
+
+         if (result.charAt(result.length() - 1) != '\n') {// Formatacao para leitura correta de todos os tokens,
+                                                          // sinaliza que o fim do arquivo foi atingido
+            result = result + '\n';
+         }
+
+         br.close();
+
       } catch (Exception e) {
          e.printStackTrace();
       }
 
-      return result;
+      String results[] = new String[2]; // Formatacao do retorno da funcao, que retorna o arquivo lido e a quantidade de
+                                        // linhas
+      results[0] = result;
+      results[1] = Integer.toString(auxLinha);
+
+      return results;
    }
 
    public static Simbolo searchTabela(String tok) {
@@ -169,7 +189,7 @@ public class Main {
    }
 
    public static char lerChar(int i) {
-      return file.charAt(i);
+      return file[0].charAt(i);
    }
 
    /* ANALISADOR LEXICO */
@@ -177,30 +197,37 @@ public class Main {
       Simbolo simbolo = new Simbolo();
       int estado = 0;
       String lex = "";
+      numLinhasArquivo = Integer.parseInt(file[1]);
+
+      // System.out.println(file);
 
       // Enquanto for um estado valido, o analisador lexico ira procurar por um token
       while (estado != -1) {
 
          // Se for tentando ler um caracter depois do fim de arquivo, dispara um erro
-         if (index >= file.length() && error == false) {
+         if (index >= file[0].length() && error == false) {
             error = true;
             estado = -1;
+            if (numLinhasArquivo < linhas) { // Formatacao da linha, quando o erro de fim de arquivo aparece na linha
+                                             // antes do EOF
+               linhas--;
+            }
             System.out.print((linhas) + "\nfim de arquivo nao esperado.");
             break;
          }
 
-         if (index >= file.length()) {
+         if (index >= file[0].length()) {
             estado = -1;
             break;
          }
 
-         char c = file.charAt(index);
+         char c = file[0].charAt(index);
          // Se o caracter lido nao pertencer a linguagem, dispara um erro
          if (searchAlfabeto(c, alfabeto_caracteres) == false && isLetter(c) == false && Character.isDigit(c) == false
                && c != '\n' && c != '\r') {
             error = true;
             System.out.print((linhas) + "\ncaractere invalido.");
-            index = file.length();
+            index = file[0].length();
          } else {
             switch (estado) {
                case 0:
@@ -273,7 +300,7 @@ public class Main {
                      estado = 0;
                      linhas++;
                      index++;
-                     if (index >= file.length()) {
+                     if (index >= file[0].length()) {
                         estado = -1;
                      }
                      // Caracter nao pertencente a nenhum token
@@ -282,7 +309,7 @@ public class Main {
                         lex += c;
                      }
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      error = true;
                      estado = -1;
                   }
@@ -297,7 +324,7 @@ public class Main {
                   } else {
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      estado = -1;
                      break;
                   }
@@ -319,7 +346,7 @@ public class Main {
                   } else {
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      estado = -1;
                   }
                   break;
@@ -342,7 +369,7 @@ public class Main {
                   } else {
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                   }
                   break;
 
@@ -351,6 +378,7 @@ public class Main {
                   if (c == '=') { // Adiciona o = aos simbolos <,> ou =
                      lex += c;
                      simbolo.setToken(lex);
+                     simbolo.setLexema(lex);
                      index++;
                      estado = 30;
                   } else { // Leu apenas os simbolos >, < ou =
@@ -372,7 +400,7 @@ public class Main {
                                          // ocorrer dispara um erro
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      lex = "";
                      estado = -1;
                   }
@@ -407,16 +435,17 @@ public class Main {
                      estado = 8;
                   } else {
                      error = true;
-                     if ((c == '\n' || c == '\r') && (index + 1) == file.length()) { // Se exister uma quebra de linha
-                                                                                     // logo antes do arquivo acabar
-                                                                                     // dispara-se um erro
+                     if ((c == '\n' || c == '\r') && (index + 1) == file[0].length()) { // Se exister uma quebra de
+                                                                                        // linha
+                        // logo antes do arquivo acabar
+                        // dispara-se um erro
                         System.out.print((linhas) + "\nfim de arquivo nao esperado.");
-                        index = file.length();
+                        index = file[0].length();
                         lex = "";
                         estado = -1;
                      } else {
                         System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                        index = file.length();
+                        index = file[0].length();
                         lex = "";
                         estado = -1;
                      }
@@ -432,16 +461,16 @@ public class Main {
                      estado = 30;
                   } else {
                      error = true;
-                     if ((c == '\n' || c == '\r') && (index + 1) == file.length()) {// Se exister uma quebra de linha
-                                                                                    // logo antes do arquivo acabar
-                                                                                    // dispara-se um erro
+                     if ((c == '\n' || c == '\r') && (index + 1) == file[0].length()) {// Se exister uma quebra de linha
+                        // logo antes do arquivo acabar
+                        // dispara-se um erro
                         System.out.print((linhas) + "\nfim de arquivo nao esperado.");
-                        index = file.length();
+                        index = file[0].length();
                         lex = "";
                         estado = -1;
                      } else {
                         System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                        index = file.length();
+                        index = file[0].length();
                         lex = "";
                         estado = -1;
                      }
@@ -478,7 +507,7 @@ public class Main {
                      error = true;
                      estado = -1;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      lex = "";
                   }
                   break;
@@ -573,7 +602,7 @@ public class Main {
                   } else {
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      lex = "";
                      estado = -1;
                   }
@@ -644,7 +673,7 @@ public class Main {
                   } else {
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      lex = "";
                      estado = -1;
                   }
@@ -681,13 +710,16 @@ public class Main {
 
    /* ANALISADOR SINTATICO */
 
-   //Metodo do CasaToken para identificar se o token lido corresponde as regras da gramatica
+   // Metodo do CasaToken para identificar se o token lido corresponde as regras da
+   // gramatica
    public static void ct(String token_esperado) {
       if (token.getToken().equals(token_esperado)) {
-         // System.out.println("casatoken token ant: " + token.getToken());
          token = analisadorLexico();
-         // System.out.println("casatoken token att: " + token.getToken());
-      } else if (token.getToken().equals("")) {
+      } else if (token.getToken().equals("") && error == false) {
+         if (numLinhasArquivo < linhas) { // Formatacao da linha, quando o erro de fim de arquivo aparece na linha antes
+                                          // do EOF
+            linhas--;
+         }
          System.out.print((linhas) + "\nfim de arquivo nao esperado.");
          error = true;
          System.exit(0);
@@ -707,7 +739,7 @@ public class Main {
    public static void S() {
       token = analisadorLexico();
       try {
-         //Enquanto for uma declaracao ou comando
+         // Enquanto for uma declaracao ou comando
          while (token.getToken().equals("integer") || token.getToken().equals("const")
                || token.getToken().equals("char") || token.getToken().equals("real")
                || token.getToken().equals("string") || token.getToken().equals("boolean") || token.getToken()
@@ -716,21 +748,21 @@ public class Main {
                || token.getToken().equals(";") || token.getToken().equals("readln")
                || token.getToken().equals("writeln") || token.getToken().equals("write")) {
 
-            //Identifica os tokens que sao declaracoes
+            // Identifica os tokens que sao declaracoes
             while (token.getToken().equals("integer") || token.getToken().equals("const")
                   || token.getToken().equals("char") || token.getToken().equals("real")
                   || token.getToken().equals("string") || token.getToken().equals("boolean")) {
                Declaracao();
             }
 
-            //Identifica os tokens que sao comandos
+            // Identifica os tokens que sao comandos
             while (token.getToken().equals("id") || token.getToken().equals("while") || token.getToken().equals("if")
                   || token.getToken().equals(";") || token.getToken().equals("readln")
                   || token.getToken().equals("writeln") || token.getToken().equals("write")) {
                Comandos();
             }
 
-            //Se for um token que nao inicia nem declaracao ou comando dispara-se um erro
+            // Se for um token que nao inicia nem declaracao ou comando dispara-se um erro
             while (token.getToken().equals("end") || token.getToken().equals("begin")) {
                error = true;
                System.out.println(linhas);
@@ -768,7 +800,7 @@ public class Main {
             if (token.getToken().equals("-")) {
                ct("-");
             }
-            ct("const");  // -> valor constante
+            ct("const"); // -> valor constante
          }
          while (token.getToken().equals(",")) {
             ct(",");
@@ -871,18 +903,8 @@ public class Main {
          }
          ct("end");
       } else {
-         if(token.getToken().equals("(")){
-            ct("(");
-            Comandos();
-            ct(")");
-         } else {
-            Comandos();
-            if (token.getToken().equals(")")) {
-               ct("err");
-            }
-         }
+         Comandos();
       }
-
       if (token.getToken().equals("else")) {
          ct("else");
          if (token.getToken().equals("begin")) {
@@ -894,27 +916,8 @@ public class Main {
             }
             ct("end");
          } else {
-            if(token.getToken().equals("(")){
-               ct("(");
-               Comandos();
-               ct(")");
-            } else {
-               Comandos();
-               if (token.getToken().equals(")")) {
-                  ct("err");
-               }
-            }
-         }
-      }
-
-       if (token.getToken().equals("begin")) {
-         ct("begin");
-         while (token.getToken().equals("id") || token.getToken().equals("while") || token.getToken().equals("if")
-               || token.getToken().equals(";") || token.getToken().equals("readln")
-               || token.getToken().equals("writeln") || token.getToken().equals("write")) {
             Comandos();
          }
-         ct("end");
       }
    }
 
