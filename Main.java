@@ -1,6 +1,17 @@
+/*
+Compiladores/2022.1
+
+Grupo:
+@Giulia Chiucchi
+@Gustavo Gomes
+@Stephanie Silva
+
+*/
+
 import java.util.*;
 import java.io.*;
 
+/*Criacao da classe para a representacao de um simbolo da linguagem*/
 class Simbolo {
    private String lexema = "";
    private String tipo = "";
@@ -90,25 +101,32 @@ class Simbolo {
 public class Main {
    private static ArrayList<String> linhasArquivo;
    private static Simbolo token = new Simbolo();
-   private static String file = readFile();
-   static BufferedReader arquivo;
+   private static String[] file = readFile();
+   static BufferedReader arquivo; // pode tirar, nao?
    private static int linhas = 1;
    private static int index = 0;
-   private static int index1 = 0;
+   private static int indexTabela = 0;
    private static boolean error = false;
+   private static int numLinhasArquivo;
 
-   // linguagem
-   private static String[] alfabeto_simbolos = { "_", ".", ",", ";", ":", "(", ")", "[", "]", "+", "-", "'", "\"", "@",
-         "&", "%", "!", "?", ">", "<", "=", "*", "/" };
+   // Declaracao dos caracteres que fazem parte dos tokens da linguagem
+   private static String[] alfabeto_simbolos = { "_", ".", ",", ";", "(", ")", "[", "]", "+", "-", "'", "\"",
+         "%", "!", ">", "<", "=", "*", "/" };
+   // Declaracao dos caracteres reservados da linguagem que nao podem ser
+   // declaradas ou atribuidas durante o programa, exceto o TRUE e FALSE
    private static String[] alfabeto_reservadas = { "const", "integer", "char", "while", "if", "real", "else", "and",
          "or", "not", "begin", "end", "readln", "string", "write", "writeln", "TRUE", "FALSE", "boolean", "==", "!=",
          ">=", "<=", "//" };
+   // Declaracao dos caracteres permitidos na linguagem que podem ser usados em
+   // comentarios, strings e char
    private static String[] alfabeto_caracteres = { " ", "_", ".", ",", ";", ":", "(", ")", "[", "]", "{", "}", "+", "-",
          "\"", "'", "/", "\\", "@", "&", "%", "!", "?", ">", "<", "=", "*" };
+   // Declaracao das letras permitidas nas constantes hexadecimais
    private static String[] letras_hexa = { "A", "B", "C", "D", "E", "F" };
 
    public static HashMap<String, Simbolo> tabela = new HashMap<>();
 
+   // Letras permitidas na linguagem
    public static boolean isLetter(char c) {
       if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
          return true;
@@ -116,28 +134,44 @@ public class Main {
          return false;
    }
 
-   public static String readFile() {
+   public static String[] readFile() {
       String result = "";
-      String temp = "";
+      int auxLinha = 1;
 
       try {
          linhasArquivo = new ArrayList<String>();
-         Scanner sc = new Scanner(System.in);
-         while (sc.hasNext()) {
-            temp = sc.nextLine();
-            linhasArquivo.add(temp);
-            result = result + temp + "\n";
-            linhas++;
+         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+         for (int t = br.read(); t != -1; t = br.read()) {
+
+            if ((char) t == '\n') {
+               result = result + (char) t;
+               auxLinha += 1; // Variavel para ter controle de quantas linhas tem no arquivo, mesmo as nulas
+               linhasArquivo.add(result);
+            } else if ((char) t == '\r') {
+            } else {
+               char aux = (char) t;
+               result = result + aux;
+            }
          }
 
-         // System.out.print(result);
+         if (result.charAt(result.length() - 1) != '\n') {// Formatacao para leitura correta de todos os tokens,
+                                                          // sinaliza que o fim do arquivo foi atingido
+            result = result + '\n';
+         }
 
-         sc.close();
+         br.close();
+
       } catch (Exception e) {
          e.printStackTrace();
       }
 
-      return result;
+      String results[] = new String[2]; // Formatacao do retorno da funcao, que retorna o arquivo lido e a quantidade de
+                                        // linhas
+      results[0] = result;
+      results[1] = Integer.toString(auxLinha);
+
+      return results;
    }
 
    public static Simbolo searchTabela(String tok) {
@@ -155,7 +189,7 @@ public class Main {
    }
 
    public static char lerChar(int i) {
-      return file.charAt(i);
+      return file[0].charAt(i);
    }
 
    /* ANALISADOR LEXICO */
@@ -163,33 +197,46 @@ public class Main {
       Simbolo simbolo = new Simbolo();
       int estado = 0;
       String lex = "";
+      numLinhasArquivo = Integer.parseInt(file[1]);
 
+      // System.out.println(file);
+
+      // Enquanto for um estado valido, o analisador lexico ira procurar por um token
       while (estado != -1) {
 
-         if (index >= file.length() && error == false) {
+         // Se for tentando ler um caracter depois do fim de arquivo, dispara um erro
+         if (index >= file[0].length() && error == false) {
             error = true;
             estado = -1;
+            if (numLinhasArquivo < linhas) { // Formatacao da linha, quando o erro de fim de arquivo aparece na linha
+                                             // antes do EOF
+               linhas--;
+            }
             System.out.print((linhas) + "\nfim de arquivo nao esperado.");
             break;
          }
 
-         char c = file.charAt(index);
-         System.out.println("Case 0 c: " + c + "|| index: " + index);
+         if (index >= file[0].length()) {
+            estado = -1;
+            break;
+         }
+
+         char c = file[0].charAt(index);
+         // Se o caracter lido nao pertencer a linguagem, dispara um erro
          if (searchAlfabeto(c, alfabeto_caracteres) == false && isLetter(c) == false && Character.isDigit(c) == false
                && c != '\n' && c != '\r') {
             error = true;
             System.out.print((linhas) + "\ncaractere invalido.");
-            index = file.length();
+            index = file[0].length();
          } else {
             switch (estado) {
                case 0:
-                  // System.out.println("Case 0 c: " + c + "index: " + index);
                   // Constante Hexadecimal ou Identificador
                   if (searchAlfabeto(c, letras_hexa)) {
                      lex += c;
                      index++;
                      estado = 11;
-                     // Identificador
+                     // Identificador ou Palavra reservada
                   } else if (c == '_' || isLetter(c)) {
                      lex += c;
                      index++;
@@ -197,7 +244,6 @@ public class Main {
                      estado = 10;
                      // Numero real ou numero inteiro ou constante hexadecimal
                   } else if (Character.isDigit(c)) {
-                     // System.out.println("Case 0 digit case c: " + c);
                      lex += c;
                      index++;
                      estado = 21;
@@ -207,14 +253,11 @@ public class Main {
                      lex += c;
                      index++;
                      estado = 4;
-                     // System.out.println(c + " compilado");
                      // Diferente
                   } else if (c == '!') {
                      lex += c;
                      index++;
                      estado = 5;
-                     // System.out.println(c + " compilado");
-
                      // Divisao ou quociente da divisao de 2 inteiros
                   } else if (c == '/') {
                      lex += c;
@@ -225,13 +268,12 @@ public class Main {
                      lex += c;
                      index++;
                      estado = 7;
-                     // System.out.println(c + " compilado");
-
                      // String
                   } else if (c == '"') {
                      lex += c;
                      index++;
                      estado = 9;
+                     // Operadores
                   } else if (c == ',' || c == '-' || c == '+' || c == '*' || c == ';' || c == '%' || c == '('
                         || c == ')' || c == '[' || c == ']') {
                      lex += c;
@@ -241,7 +283,6 @@ public class Main {
                      estado = 30;
                      // Ponto flutuante
                   } else if (c == '.') {
-                     // System.out.println("ponto flutuante, c:" + c);
                      lex += c;
                      index++;
                      estado = 19;
@@ -250,112 +291,97 @@ public class Main {
                      lex += c;
                      index++;
                      estado = 1;
-                     // System.out.println(c + " compilado");
+                     // Delimitador de token
                   } else if (c == ' ') {
                      estado = 0;
                      index++;
+                     // Delimitador de token
                   } else if (c == '\n' || c == '\r') {
                      estado = 0;
                      linhas++;
                      index++;
-                     if (index >= file.length()) {
+                     if (index >= file[0].length()) {
                         estado = -1;
                      }
-                     // System.out.println("quebra de linha");
+                     // Caracter nao pertencente a nenhum token
                   } else {
                      if (lex.length() == 0) {
                         lex += c;
                      }
-
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      error = true;
                      estado = -1;
-                     break;
                   }
                   break;
 
+               // Comentario: casos de 1 a 3
                case 1:
                   if (c == '*') {
                      estado = 2;
                      index++;
                      lex += c;
-                     // System.out.println(c + " compilado");
                   } else {
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      estado = -1;
                      break;
                   }
                   break;
 
                case 2:
-                  /*
-                   * aparentemente eh coisa com comentario que nao eh fechado,
-                   * vamo ter que pensar nas possibilidades de alguem errar a sintaxe de um
-                   * comentario
-                   */
-                  // System.out.println("case 2 c:" + c);
                   if (c == '*') {
                      estado = 3;
                      index++;
                      lex += c;
-                     // System.out.println(c + " compilado");
                   } else if (isLetter(c) || Character.isDigit(c) || searchAlfabeto(c, alfabeto_caracteres) == true
-                        || c == ' ' || c == '\n' || c == '\r') {
+                        || c == ' ' || c == '\n' || c == '\r') { // Enquanto o comentario nao achar um * e ler um
+                                                                 // caracter ou delimitador valido na linguagem
                      index++;
                      if (c == '\n' || c == '\r')
                         linhas++;
                      lex += c;
                      estado = 2;
-                     // System.out.println(c + " compilado");
-                     // System.out.println("lexema: " + lex);
                   } else {
-                     // System.out.println(c + "teste");
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      estado = -1;
-
                   }
                   break;
 
                case 3:
-                  if (c == '*') {
+                  if (c == '*') { // Pode-se ler 0 ou mais * dentro de um comentario
                      estado = 3;
                      index++;
                      lex += c;
-                     // System.out.println(c + " compilado");
-                  } else if (c != '*' && c != '}') {
+                  } else if (c != '*' && c != '}') { // Volta para o estado 2 pois o comentario ainda nao foi finalizado
                      estado = 2;
                      index++;
                      lex += c;
                      if (c == '\n' || c == '\r')
                         linhas++;
-                     // System.out.println(c + " compilado");
-                  } else if (c == '}') {
+                  } else if (c == '}') { // Fechamento do comentario
                      estado = 0;
                      index++;
                      lex = "";
-                     // System.out.println(c + " compilado");
                   } else {
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                   }
                   break;
 
-               // >= <= ==
+               // >= <= == > < =
                case 4:
-                  // System.out.println("case 4 c: " + c);
-                  if (c == '=') {
+                  if (c == '=') { // Adiciona o = aos simbolos <,> ou =
                      lex += c;
                      simbolo.setToken(lex);
+                     simbolo.setLexema(lex);
                      index++;
-                     // System.out.println(c + " compilado");
                      estado = 30;
-                  } else {
+                  } else { // Leu apenas os simbolos >, < ou =
                      simbolo.setToken(lex);
                      simbolo.setLexema(lex);
                      estado = 30;
@@ -370,11 +396,11 @@ public class Main {
                      simbolo.setLexema(lex);
                      index++;
                      estado = 30;
-                     // System.out.println(c + " compilado");
-                  } else if (c != '=') {
+                  } else if (c != '=') { // O caracter ! deve ser obrigatoriamente seguido por um '=', se isso nao
+                                         // ocorrer dispara um erro
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      lex = "";
                      estado = -1;
                   }
@@ -397,47 +423,81 @@ public class Main {
 
                // Char
                case 7:
-
-                  if ((searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c) || isLetter(c))
+                  if ((searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c) || isLetter(c)) // Char so pode
+                                                                                                      // ser composto de
+                                                                                                      // letras, digitos
+                                                                                                      // ou caracteres
+                                                                                                      // validos na
+                                                                                                      // linguagem
                         && c != ' ') {
                      lex += c;
                      index++;
                      estado = 8;
-                     // System.out.println(c + " compilado");
                   } else {
                      error = true;
-                     System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
-                     lex = "";
-                     estado = -1;
+                     if ((c == '\n' || c == '\r') && (index + 1) == file[0].length()) { // Se exister uma quebra de
+                                                                                        // linha
+                        // logo antes do arquivo acabar
+                        // dispara-se um erro
+                        System.out.print((linhas) + "\nfim de arquivo nao esperado.");
+                        index = file[0].length();
+                        lex = "";
+                        estado = -1;
+                     } else {
+                        System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
+                        index = file[0].length();
+                        lex = "";
+                        estado = -1;
+                     }
                   }
                   break;
 
                case 8:
-                  if (c == '\'') {
+                  if (c == '\'') { // Fechamento do char
                      lex += c;
                      simbolo.setToken("const");
                      simbolo.setLexema(lex);
                      index++;
                      estado = 30;
-                     // System.out.println(c + " compilado");
                   } else {
                      error = true;
-                     System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
-                     lex = "";
-                     estado = -1;
+                     if ((c == '\n' || c == '\r') && (index + 1) == file[0].length()) {// Se exister uma quebra de linha
+                        // logo antes do arquivo acabar
+                        // dispara-se um erro
+                        System.out.print((linhas) + "\nfim de arquivo nao esperado.");
+                        index = file[0].length();
+                        lex = "";
+                        estado = -1;
+                     } else {
+                        System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
+                        index = file[0].length();
+                        lex = "";
+                        estado = -1;
+                     }
                   }
                   break;
 
                // string
                case 9:
                   if (c != '"'
-                        && (searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c) || isLetter(c))) {
+                        && (searchAlfabeto(c, alfabeto_caracteres) || Character.isDigit(c) || isLetter(c))) { // String
+                                                                                                              // so pode
+                                                                                                              // ser
+                                                                                                              // composto
+                                                                                                              // de
+                                                                                                              // letras,
+                                                                                                              // digitos
+                                                                                                              // ou
+                                                                                                              // caracteres
+                                                                                                              // validos
+                                                                                                              // na
+                                                                                                              // linguagem,
+                                                                                                              // exceto
+                                                                                                              // aspas
                      lex += c;
                      index++;
                      estado = 9;
-                  } else if (c == '"') {
+                  } else if (c == '"') { // Fechamento da string
                      lex += c;
                      simbolo.setToken("const");
                      simbolo.setLexema(lex);
@@ -447,49 +507,54 @@ public class Main {
                      error = true;
                      estado = -1;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      lex = "";
                   }
                   break;
 
-               // identificador
+               // identificador ou palavra reservada
                case 10:
                   if ((c == '_' || isLetter(c) || Character.isDigit(c))) {
                      lex += c;
                      index++;
                      estado = 10;
-                  } else if (c != '_' && isLetter(c) == false && Character.isDigit(c) == false) {
-                     // System.out.println(lex + " -> lex");
-                     if (searchTabela(lex) == null) {
+                  } else if (c != '_' && isLetter(c) == false && Character.isDigit(c) == false) { // Leitura de um
+                                                                                                  // caracter nao mais
+                                                                                                  // pertencente ao ID
+                                                                                                  // ou palavra
+                                                                                                  // reservada
+                     if (searchTabela(lex) == null) { // Verifica se é uma palavra reservada, se retornar null na busca
+                                                      // da tabela de simbolos é um ID
                         simbolo.setToken("id");
                         simbolo.setLexema(lex);
                      } else {
-                        if (lex.equals("TRUE") || lex.equals("FALSE")) {
+                        if (lex.equals("TRUE") || lex.equals("FALSE")) { // das palavras reservadas, o TRUE e ELSE sao
+                                                                         // constantes
                            simbolo.setToken("const");
                            simbolo.setLexema(lex);
                         } else {
                            simbolo = searchTabela(lex);
                            simbolo.setLexema(lex);
                         }
-
                      }
-
-                     // System.out.println(simbolo.getToken() + " -> simbolo");
-
                      estado = 30;
                   }
                   break;
 
+               // Constante hexadecimal ou identificador, casos 11, 16, 18
                case 11:
-                  if (searchAlfabeto(c, letras_hexa) || Character.isDigit(c)) {
+                  if (searchAlfabeto(c, letras_hexa) || Character.isDigit(c)) { // Verifica se é uma das letras
+                                                                                // hexadecimal ou um numero para decidir
+                                                                                // se é um ID ou nao
                      lex += c;
                      index++;
                      estado = 16;
-                  } else if (isLetter(c) || c == '_') {
+                  } else if (isLetter(c) || c == '_') { // Verificou que os caracteres lidos podem fazer parte de um ID
+                                                        // e nao mais uma const hexadecimal
                      lex += c;
                      index++;
                      estado = 10;
-                  } else {
+                  } else { // Verificou que foi encontrado um ID
                      estado = 30;
                      simbolo.setToken("id");
                      simbolo.setLexema(lex);
@@ -497,15 +562,18 @@ public class Main {
                   break;
 
                case 16:
-                  if (c == 'h') {
+                  if (c == 'h') { // Possivel const hexadecimal encontrada, vai para o estado 18 para confirmar se
+                                  // é um ID ou uma const
                      lex += c;
                      index++;
                      estado = 18;
-                  } else if ((c == '_' || isLetter(c) || Character.isDigit(c))) {
+                  } else if ((c == '_' || isLetter(c) || Character.isDigit(c))) {// Verificou que os caracteres lidos
+                                                                                 // podem fazer parte de um ID e nao
+                                                                                 // mais uma const hexadecimal
                      lex += c;
                      index++;
                      estado = 10;
-                  } else {
+                  } else { // Verificou que foi encontrado um ID
                      estado = 30;
                      simbolo.setToken("id");
                      simbolo.setLexema(lex);
@@ -513,33 +581,35 @@ public class Main {
                   break;
 
                case 18:
-                  if ((c == '_' || isLetter(c) || Character.isDigit(c))) {
+                  if ((c == '_' || isLetter(c) || Character.isDigit(c))) { // Verificacao que os caracteres sendo lidos
+                                                                           // podem fazer parte de um ID
                      lex += c;
                      index++;
                      estado = 10;
-                  } else {
+                  } else { // Confirmacao que é uma const hexadecimal
                      estado = 30;
                      simbolo.setToken("const");
                      simbolo.setLexema(lex);
                   }
                   break;
 
-               case 19:
-                  if (Character.isDigit(c)) {
+               case 19:// Verificacao de const hexadecimal ou numero, casos 19,20,21,22,23,24
+                  if (Character.isDigit(c)) {// Numero iniciado com ponto, se nao achar um numero depois do '.'
+                                             // dispara-se um erro
                      lex += c;
                      index++;
                      estado = 20;
                   } else {
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      lex = "";
                      estado = -1;
                   }
                   break;
 
                case 20:
-                  if (Character.isDigit(c)) {
+                  if (Character.isDigit(c)) { // Leitura de um numero interio ou real
                      lex += c;
                      index++;
                      estado = 20;
@@ -551,8 +621,7 @@ public class Main {
                   break;
 
                case 21:
-                  // System.out.println("Case 21 c: " + c);
-                  if (c == '.') {
+                  if (c == '.') { // Verificacao se é um numero real, inteiro ou const hexadecimal
                      lex += c;
                      index++;
                      estado = 20;
@@ -564,7 +633,7 @@ public class Main {
                      lex += c;
                      index++;
                      estado = 23;
-                  } else {
+                  } else { // Encontrou um numero
                      estado = 30;
                      simbolo.setToken("const");
                      simbolo.setLexema(lex);
@@ -572,15 +641,15 @@ public class Main {
                   break;
 
                case 22:
-                  if (c == '.') {
+                  if (c == '.') {// Verificacao se é um numero real ou inteiro
                      lex += c;
                      index++;
                      estado = 20;
-                  } else if(Character.isDigit(c)){
+                  } else if (Character.isDigit(c)) {
                      lex += c;
                      index++;
                      estado = 24;
-                  } else if (c == 'h') {
+                  } else if (c == 'h') {// Encontrou uma constante hexadecimal comecada por digito
                      lex += c;
                      index++;
                      estado = 30;
@@ -593,24 +662,9 @@ public class Main {
                   }
                   break;
 
-               case 24:
-                  if (c == '.') {
-                     lex += c;
-                     index++;
-                     estado = 20;
-                  } else if (Character.isDigit(c)) {
-                     lex += c;
-                     index++;
-                     estado = 24;
-                  }  else {
-                     estado = 30;
-                     simbolo.setToken("const");
-                     simbolo.setLexema(lex);
-                  }
-               break;
-
                case 23:
-                  if (c == 'h') {
+                  if (c == 'h') {// Encontrou uma constante hexadecimal composta do por 1 digito e uma letra
+                                 // hexadecimal
                      lex += c;
                      index++;
                      estado = 30;
@@ -619,17 +673,32 @@ public class Main {
                   } else {
                      error = true;
                      System.out.print((linhas) + "\nlexema nao identificado [" + lex + "].");
-                     index = file.length();
+                     index = file[0].length();
                      lex = "";
                      estado = -1;
                   }
                   break;
 
-               case 30:
-                  // System.out.println("Token lido no estado final:" + lex);
+               case 24:
+                  if (c == '.') {// Verificacao se é um numero real ou inteiro
+                     lex += c;
+                     index++;
+                     estado = 20;
+                  } else if (Character.isDigit(c)) {
+                     lex += c;
+                     index++;
+                     estado = 24;
+                  } else {
+                     estado = 30;
+                     simbolo.setToken("const");
+                     simbolo.setLexema(lex);
+                  }
+                  break;
+
+               case 30: // Estado final de aceitacao de um token, devolve o lexema lido para o
+                        // analisador sintatico
                   lex = "";
                   estado = -1;
-                  // System.out.println(lex);
                   break;
             }
          }
@@ -641,22 +710,16 @@ public class Main {
 
    /* ANALISADOR SINTATICO */
 
+   // Metodo do CasaToken para identificar se o token lido corresponde as regras da
+   // gramatica
    public static void ct(String token_esperado) {
-      // System.out.println("CASA TOKEN: " + token.getToken());
-
-      // System.out.println(token.getToken().equals(token_esperado));
       if (token.getToken().equals(token_esperado)) {
-         // System.out.println("antes do AL");
          token = analisadorLexico();
-         /*
-          * System.out.println("depois do AL");
-          * System.out.println(token.getToken());
-          * if (error == true) {
-          * System.out.print((linhas) + "\nfim de arquivo nao esperado.");
-          * }
-          */
       } else if (token.getToken().equals("") && error == false) {
-         // triar um erro de fim de arquivo aqui
+         if (numLinhasArquivo < linhas) { // Formatacao da linha, quando o erro de fim de arquivo aparece na linha antes
+                                          // do EOF
+            linhas--;
+         }
          System.out.print((linhas) + "\nfim de arquivo nao esperado.");
          error = true;
          System.exit(0);
@@ -664,12 +727,10 @@ public class Main {
          if (error == false) {
             error = true;
             System.out.println(linhas);
-            System.out.print("token nao esperado [" + token.getLexema() + "].");
+            System.out.print("token nao esperado [" + token.getToken() + "].");
             System.exit(0);
          }
       }
-
-      // System.out.println("saindo do ct");
    }
 
    /*
@@ -677,9 +738,8 @@ public class Main {
     */
    public static void S() {
       token = analisadorLexico();
-      //System.out.println("token: " + token.getToken());
-      // System.out.println("token lido:" + token.getToken());
       try {
+         // Enquanto for uma declaracao ou comando
          while (token.getToken().equals("integer") || token.getToken().equals("const")
                || token.getToken().equals("char") || token.getToken().equals("real")
                || token.getToken().equals("string") || token.getToken().equals("boolean") || token.getToken()
@@ -688,24 +748,25 @@ public class Main {
                || token.getToken().equals(";") || token.getToken().equals("readln")
                || token.getToken().equals("writeln") || token.getToken().equals("write")) {
 
+            // Identifica os tokens que sao declaracoes
             while (token.getToken().equals("integer") || token.getToken().equals("const")
                   || token.getToken().equals("char") || token.getToken().equals("real")
                   || token.getToken().equals("string") || token.getToken().equals("boolean")) {
-               // System.out.println("while declaracao");
                Declaracao();
             }
 
+            // Identifica os tokens que sao comandos
             while (token.getToken().equals("id") || token.getToken().equals("while") || token.getToken().equals("if")
                   || token.getToken().equals(";") || token.getToken().equals("readln")
                   || token.getToken().equals("writeln") || token.getToken().equals("write")) {
-               // System.out.println("while comandos");
                Comandos();
             }
 
-            while (token.getToken().equals("end") || token.getToken().equals("begin")){
+            // Se for um token que nao inicia nem declaracao ou comando dispara-se um erro
+            while (token.getToken().equals("end") || token.getToken().equals("begin")) {
                error = true;
                System.out.println(linhas);
-               System.out.print("token nao esperado [" + token.getLexema() + "].");
+               System.out.print("token nao esperado [" + token.getToken() + "].");
                System.exit(0);
             }
          }
@@ -717,14 +778,11 @@ public class Main {
     * Declaracao -> Variaveis | Constantes
     */
    public static void Declaracao() {
-      //System.out.println("Declaracao token: " + token.getToken());
       if (token.getToken().equals("integer") || token.getToken().equals("char") || token.getToken().equals("real")
             || token.getToken().equals("string") || token.getToken().equals("boolean")) {
-         // System.out.println("Variaveis " + token.getToken());
          Variaveis();
       } else if (token.getToken().equals("const")) {
          Constantes();
-         // System.out.println("Constantes");
       }
    }
 
@@ -733,10 +791,8 @@ public class Main {
     * {,id2[ = [-] constante ] }* ;}
     */
    public static void Variaveis() {
-      // System.out.println("Variaveis token: " + token.getToken());
       while (token.getToken().equals("integer") || token.getToken().equals("char") || token.getToken().equals("real")
             || token.getToken().equals("string") || token.getToken().equals("boolean")) {
-         // System.out.println("Variaveis " + token.getToken());
          ct(token.getToken());
          ct("id");
          if (token.getToken().equals("=")) {
@@ -744,7 +800,7 @@ public class Main {
             if (token.getToken().equals("-")) {
                ct("-");
             }
-            ct("const");
+            ct("const"); // -> valor constante
          }
          while (token.getToken().equals(",")) {
             ct(",");
@@ -766,7 +822,6 @@ public class Main {
     * CONSTANTES {const id = [-] constante;}*
     */
    public static void Constantes() {
-      // System.out.println("Constantes token: " + token.getToken());
       while (token.getToken().equals("const")) {
          ct("const");
          ct("id");
@@ -784,11 +839,8 @@ public class Main {
     * leitura, escrita
     */
    public static void Comandos() {
-      // System.out.println("Comandos token: " + token.getToken());
       if (token.getToken().equals("id")) {
-         // System.out.println("entrou atribuicao");
          atribuicao();
-         // System.out.println("saiu da atribuicao 2");
       } else if (token.getToken().equals("while")) {
          repeticao();
       } else if (token.getToken().equals("if")) {
@@ -809,24 +861,19 @@ public class Main {
       if (token.getToken().equals("=")) {
          ct("=");
          Exp();
-         // System.out.println("saiu da expressao chamada pela atribuicao");
       } else if (token.getToken().equals("[")) {
          ct("[");
          Exp();
          ct("]");
          ct("=");
          Exp();
-         // System.out.println("saiu da expressao chamada pela atribuicao");
       }
-      // System.out.println("antes do ct ;");
       ct(";");
-      // System.out.println("saiu da atribuicao");
    }
 
    // Comando de repeticao
    // while Exp (Comandos | Lista_Comandos)
    public static void repeticao() {
-      // System.out.println("repeticao token: " + token.getToken());
       ct("while");
       Exp();
       if (token.getToken().equals("begin")) {
@@ -836,7 +883,6 @@ public class Main {
                || token.getToken().equals("writeln") || token.getToken().equals("write")) {
             Comandos();
          }
-         // System.out.println("esperando o end");
          ct("end");
       } else {
          Comandos();
@@ -846,7 +892,6 @@ public class Main {
    // Comando condicional
    // if Exp (Comandos | Lista_Comandos) [else (Comandos | Lista_Comandos)]
    public static void condicional() {
-      // System.out.println("condicional token: " + token.getToken());
       ct("if");
       Exp();
       if (token.getToken().equals("begin")) {
@@ -907,50 +952,38 @@ public class Main {
    // EXP
    // Exp_Soma1 [(== | != | < | > | <= | >=) Exp_Soma2]
    public static void Exp() {
-      // System.out.println("Exp token: " + token.getToken());
-      // System.out.println("antes do Exp_soma");
       Exp_soma(); // exp soma1
-      // System.out.println("depois do Exp_soma");
       if (token.getToken().equals("==") || token.getToken().equals("!=") || token.getToken().equals("<")
             || token.getToken().equals(">") || token.getToken().equals("<=") || token.getToken().equals(">=")) {
          ct(token.getToken());
-         Exp_soma(); // exp soma 2
+         Exp_soma(); // exp soma2
       }
-      // System.out.println("depois do if no Exp_soma");
    }
 
    // EXP SOMA
    // [+|-] Exp_Mult1 {(+ | - | or) Exp_Mult2 }
    public static void Exp_soma() {
       if (token.getToken().equals("+")) {
-         // System.out.println("entrou no +");
          ct("+");
       } else if (token.getToken().equals("-")) {
          ct("-");
       }
-      // System.out.println("antes do Exp_mult");
       Exp_mult(); // exp mult1
-      // System.out.println("depois do Exp_mult");
       while (token.getToken().equals("+") || token.getToken().equals("-") || token.getToken().equals("or")) {
          ct(token.getToken());
-         Exp_mult(); // exp mult 2
+         Exp_mult(); // exp mult2
       }
-      // System.out.println("depois do while do Exp_soma");
    }
 
    // EXP MULT
    // Fator1{ (* | / | and | // | %) Fator2 }
    public static void Exp_mult() {
-      // System.out.println("antes do Fator");
       Fator(); // fator 1
-      // System.out.println("depois do Fator");
       while (token.getToken().equals("*") || token.getToken().equals("/") || token.getToken().equals("and")
             || token.getToken().equals("//") || token.getToken().equals("%")) {
          ct(token.getToken());
          Fator(); // fator2
       }
-      // System.out.println("depois do while do Exp_mult");
-
    }
 
    // FATOR
@@ -958,8 +991,6 @@ public class Main {
    // |
    // real "(" Exp ")"
    public static void Fator() {
-      // System.out.println("entrou no fator");
-      // tem de retornar um simbolo, nao sei se eh no semantico ou agora no sintatico
       if (token.getToken().equals("id")) {
          ct("id");
          if (token.getToken().equals("[")) {
@@ -986,28 +1017,25 @@ public class Main {
          ct(")");
       } else {
          ct("const");
-         // System.out.println("entrou no constante do fator");
       }
    }
 
    public static void main(String[] args) {
-
       // popular a tabela de simbolos com palavras reservadas e simbolos
       for (String palavra : alfabeto_simbolos) {
          tabela.put(palavra.toLowerCase(), new Simbolo(palavra, palavra, "", "", 0, 0, ""));
-         index1++;
+         indexTabela++;
       }
 
       for (String palavra : alfabeto_reservadas) {
          tabela.put(palavra.toLowerCase(), new Simbolo(palavra, palavra, "", "", 0, 0, ""));
-         index1++;
+         indexTabela++;
       }
 
-      // inicia o analisador lexico
-      // token = analisadorLexico();
-
+      // chamada inicial ao analisador sintatico
       S();
 
+      // retorno do programa compilado com sucesso
       if (error == false)
          System.out.print((linhasArquivo.size() + 1) + " linhas compiladas.");
    }
