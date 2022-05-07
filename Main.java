@@ -188,6 +188,9 @@ public class Main {
       return result;
    }
 
+   public static void addTabela(Simbolo token) {
+   }
+
    public static char lerChar(int i) {
       return file[0].charAt(i);
    }
@@ -793,29 +796,342 @@ public class Main {
    public static void Variaveis() {
       while (token.getToken().equals("integer") || token.getToken().equals("char") || token.getToken().equals("real")
             || token.getToken().equals("string") || token.getToken().equals("boolean")) {
-         ct(token.getToken());
-         ct("id");
-         if (token.getToken().equals("=")) {
-            ct("=");
-            if (token.getToken().equals("-")) {
-               ct("-");
-            }
-            ct("const"); // -> valor constante
-         }
-         while (token.getToken().equals(",")) {
-            ct(",");
-            ct("id");
-            if (token.getToken().equals("=")) {
-               ct("=");
-               if (token.getToken().equals("-")) {
-                  ct("-");
-               }
-               ct("const"); // -> valor constante
-            }
-         }
-         ct(";");
+         Simbolo id1;
+         Simbolo id2 = new Simbolo(); // só pra não dar erro ja q ainda nao foi modificado o exp para retornar simbolo
 
+         // substituido pela parte debaixo
+         /*
+          * ct(token.getToken()); // aqui ele ta pegando e ja casando direto, vai ter de
+          * ir pra dentro de um if
+          * // testando o tipo e setando a classe
+          * ct("id");
+          */
+
+         if (token.getToken().equals("integer")) {
+            ct("integer");
+            id1 = searchTabela(token.getToken()); // pesquisar pelo lexema ?
+
+            if (id1.getClasse().equals("")) {
+               id1.setClasse("var");
+               id1.setTipo("integer");
+               ct("id");
+
+               // atualizar a tabela com o id1 ??
+
+               if (token.getToken().equals("=")) {
+                  ct("=");
+                  if (token.getToken().equals("-")) {
+                     ct("-");
+                  }
+                  // id2 = Exp(); fazer com que o exp retorne um simbolo
+
+                  if (id2.getTipo().equals("integer")) {
+                     id1.setValor(id2.getLexema());
+                     // atualizar a tabela com o id1 de valor novo
+                  } else {
+                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.exit(0);
+                  }
+               }
+            } else {
+               System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+               System.exit(0);
+            }
+
+            while (token.getToken().equals(",")) {
+               ct(",");
+               id1 = searchTabela(token.getLexema());
+
+               if (id1.getClasse().equals("")) {
+                  id1.setClasse("var");
+                  id1.setTipo("integer");
+                  ct("id");
+
+                  // atualiza o alfabeto com o id1
+               } else {
+                  System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+                  System.exit(0);
+               }
+
+               if (token.getToken().equals("=")) {
+                  ct("=");
+                  if (token.getToken().equals("-")) {
+                     ct("-");
+                  }
+                  // id2 = Exp(); fazer com que o exp retorne um simbolo
+
+                  if (id2.getTipo().equals("integer")) {
+                     id1.setValor(id2.getLexema());
+                     // atualizar a tabela com o id1 de valor novo
+                  } else {
+                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.exit(0);
+                  }
+               }
+            }
+            ct(";");
+         } else if (token.getToken().equals("char")) {
+            ct("char");
+            id1 = searchTabela(token.getToken()); // pesquisar pelo lexema ?
+
+            if (id1.getClasse().equals("")) {
+               id1.setClasse("var");
+               id1.setTipo("char");
+               ct("id");
+
+               // atualizar a tabela com o id1 ??
+
+               if (token.getToken().equals("=")) {
+                  ct("=");
+                  // id2 = Exp(); fazer com que o exp retorne um simbolo
+
+                  if (id2.getTipo().equals("char")) {
+                     id1.setValor(id2.getLexema());
+                     // atualizar a tabela com o id1 de valor novo
+                  } else {
+                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.exit(0);
+                  }
+               }
+            } else {
+               System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+               System.exit(0);
+            }
+
+            while (token.getToken().equals(",")) {
+               ct(",");
+               id1 = searchTabela(token.getLexema());
+
+               if (id1.getClasse().equals("")) {
+                  id1.setClasse("var");
+                  id1.setTipo("char");
+                  ct("id");
+
+                  // atualiza o alfabeto com o id1
+               } else {
+                  System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+                  System.exit(0);
+               }
+
+               if (token.getToken().equals("=")) {
+                  ct("=");
+                  // id2 = Exp(); fazer com que o exp retorne um simbolo
+
+                  if (id2.getTipo().equals("char")) {
+                     id1.setValor(id2.getLexema());
+                     // atualizar a tabela com o id1 de valor novo
+                  } else {
+                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.exit(0);
+                  }
+               }
+            }
+            ct(";");
+         } else if (token.getToken().equals("boolean")) {
+            ct("boolean");
+            id1 = searchTabela(token.getToken()); // pesquisar pelo lexema ?
+
+            if (id1.getClasse().equals("")) {
+               id1.setClasse("var");
+               id1.setTipo("boolean");
+               ct("id");
+
+               // atualizar a tabela com o id1 ??
+
+               if (token.getToken().equals("=")) {
+                  ct("=");
+                  // id2 = Exp(); fazer com que o exp retorne um simbolo
+
+                  if (id2.getTipo().equals("boolean")) {
+                     id1.setValor(id2.getLexema());
+                     // atualizar a tabela com o id1 de valor novo
+                  } else {
+                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.exit(0);
+                  }
+               }
+            } else {
+               System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+               System.exit(0);
+            }
+
+            while (token.getToken().equals(",")) {
+               ct(",");
+               id1 = searchTabela(token.getLexema());
+
+               if (id1.getClasse().equals("")) {
+                  id1.setClasse("var");
+                  id1.setTipo("boolean");
+                  ct("id");
+
+                  // atualiza o alfabeto com o id1
+               } else {
+                  System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+                  System.exit(0);
+               }
+
+               if (token.getToken().equals("=")) {
+                  ct("=");
+                  // id2 = Exp(); fazer com que o exp retorne um simbolo
+
+                  if (id2.getTipo().equals("boolean")) {
+                     id1.setValor(id2.getLexema());
+                     // atualizar a tabela com o id1 de valor novo
+                  } else {
+                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.exit(0);
+                  }
+               }
+            }
+            ct(";");
+         } else if (token.getToken().equals("real")) {
+            ct("real");
+            id1 = searchTabela(token.getToken()); // pesquisar pelo lexema ?
+
+            if (id1.getClasse().equals("")) {
+               id1.setClasse("var");
+               id1.setTipo("real");
+               ct("id");
+
+               // atualizar a tabela com o id1 ??
+
+               if (token.getToken().equals("=")) {
+                  ct("=");
+                  if (token.getToken().equals("-")) {
+                     ct("-");
+                  }
+                  // id2 = Exp(); fazer com que o exp retorne um simbolo
+
+                  if (id2.getTipo().equals("real")) {
+                     id1.setValor(id2.getLexema());
+                     // atualizar a tabela com o id1 de valor novo
+                  } else {
+                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.exit(0);
+                  }
+               }
+            } else {
+               System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+               System.exit(0);
+            }
+
+            while (token.getToken().equals(",")) {
+               ct(",");
+               id1 = searchTabela(token.getLexema());
+
+               if (id1.getClasse().equals("")) {
+                  id1.setClasse("var");
+                  id1.setTipo("real");
+                  ct("id");
+
+                  // atualiza o alfabeto com o id1
+               } else {
+                  System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+                  System.exit(0);
+               }
+
+               if (token.getToken().equals("=")) {
+                  ct("=");
+                  if (token.getToken().equals("-")) {
+                     ct("-");
+                  }
+                  // id2 = Exp(); fazer com que o exp retorne um simbolo
+
+                  if (id2.getTipo().equals("real")) {
+                     id1.setValor(id2.getLexema());
+                     // atualizar a tabela com o id1 de valor novo
+                  } else {
+                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.exit(0);
+                  }
+               }
+            }
+            ct(";");
+         } else if (token.getToken().equals("string")) {
+            ct("string"); // o acesso a posicao de strings é feito no comando de atribuicao
+            id1 = searchTabela(token.getToken()); // pesquisar pelo lexema ?
+
+            if (id1.getClasse().equals("")) {
+               id1.setClasse("var");
+               id1.setTipo("string");
+               ct("id");
+
+               // atualizar a tabela com o id1 ??
+
+               if (token.getToken().equals("=")) {
+                  ct("=");
+                  // id2 = Exp(); fazer com que o exp retorne um simbolo
+                  // acho que no caso de string n vai pegar de exp o id2
+
+                  if (id2.getTipo().equals("string")) {
+                     id1.setValor(id2.getLexema());
+                     // atualizar a tabela com o id1 de valor novo
+                  } else {
+                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.exit(0);
+                  }
+               }
+            } else {
+               System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+               System.exit(0);
+            }
+
+            while (token.getToken().equals(",")) {
+               ct(",");
+               id1 = searchTabela(token.getLexema());
+
+               if (id1.getClasse().equals("")) {
+                  id1.setClasse("var");
+                  id1.setTipo("string");
+                  ct("id");
+
+                  // atualiza o alfabeto com o id1
+               } else {
+                  System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+                  System.exit(0);
+               }
+
+               if (token.getToken().equals("=")) {
+                  ct("=");
+               }
+               // id2 = Exp(); fazer com que o exp retorne um simbolo
+               // acho que no caso de string n vai pegar de exp o id2
+
+               if (id2.getTipo().equals("string")) {
+                  id1.setValor(id2.getLexema());
+                  // atualizar a tabela com o id1 de valor novo
+               } else {
+                  System.out.println(linhas + "\ntipos incompativeis.");
+                  System.exit(0);
+               }
+            }
+            ct(";");
+         }
+         /*
+          * tudo isso foi substituido pela parte de cima ^
+          * if (token.getToken().equals("=")) {
+          * ct("=");
+          * if (token.getToken().equals("-")) {
+          * ct("-");
+          * }
+          * ct("const"); // -> valor constante
+          * }
+          * 
+          * while (token.getToken().equals(",")) {
+          * ct(",");
+          * ct("id");
+          * if (token.getToken().equals("=")) {
+          * ct("=");
+          * if (token.getToken().equals("-")) {
+          * ct("-");
+          * }
+          * ct("const"); // -> valor constante
+          * }
+          * }
+          * ct(";");
+          */
       }
+
    }
 
    /*
