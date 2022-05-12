@@ -1138,14 +1138,61 @@ public class Main {
     * CONSTANTES {const id = [-] constante;}*
     */
    public static void Constantes() {
+      Simbolo id;
+      Simbolo id2 = new Simbolo(); // só pra não dar erro ja q ainda nao foi modificado o exp para retornar simbolo
       while (token.getToken().equals("const")) {
          ct("const");
-         ct("id");
-         ct("=");
-         if (token.getToken().equals("-")) {
-            ct("-");
+
+         if (token.getToken().equals("id")) {
+            id = searchTabela(token.getToken());
+
+            if (id.getClasse().equals("")) {
+               id.setClasse("const");
+               ct("id");
+               ct("=");
+
+               if (token.getToken().equals("-")) {
+                  ct("-");
+               }
+               // id2 = Exp();
+               if (id2.getToken().equals("const")) {
+                  if (id2.getTipo().equals("hexadecimal") ||
+                        id2.getTipo() == "int" ||
+                        id2.getTipo() == "char" ||
+                        id2.getTipo() == "boolean" ||
+                        id2.getTipo() == "string") {
+                     id.setTipo(id2.getTipo());
+                     id.setValor(id2.getValor());
+                     // atualizar a tabela de simbolos
+                  } else {
+                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.exit(0);
+                  }
+               } else if (id2.getToken().equals("id") && !id2.getClasse().equals("")) {
+                  id.setTipo(id2.getTipo());
+                  id.setValor(id2.getValor());
+                  // atualizar a tabela de simbolos
+               } else {
+                  System.out.println(linhas);
+                  System.out.println("identificador nao declarado [" + id2.getLexema() + "].");
+                  System.exit(0);
+               }
+            } else {
+               System.out.println(linhas);
+               System.out.println("identificador ja declarado [" + token.getLexema() + "].");
+               System.exit(0);
+            }
          }
-         ct("const");
+         // codigo substituido pelo código acima ^
+         /*
+          * ct("const");
+          * ct("id");
+          * ct("=");
+          * if (token.getToken().equals("-")) {
+          * ct("-");
+          * }
+          * ct("const");
+          */
          ct(";");
       }
    }
