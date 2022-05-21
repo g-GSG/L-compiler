@@ -1,9 +1,10 @@
 {* Exemplo de Programa na linguagem L *}
 
-integer n=.;
+integer n=1;
 string nome;
 const MAXITER=10;
 
+i=1.0;
 write("Digite seu nome: ");
 readln(nome);
 

@@ -2,8 +2,9 @@
 
 integer n=1;
 string nome;
-const MÁXITER=10;
+const MAXITER=10;
 
+i=1.0;
 write("Digite seu nome: ");
 readln(nome);
 
@@ -13,4 +14,3 @@ while n<=MAXITER begin
   writeln(percentual,": Ola' ",nome);
   n=n+1;
 end
-
