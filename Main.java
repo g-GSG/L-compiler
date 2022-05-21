@@ -124,6 +124,7 @@ public class Main {
          "\"", "'", "/", "\\", "@", "&", "%", "!", "?", ">", "<", "=", "*" };
    // Declaracao das letras permitidas nas constantes hexadecimais
    private static String[] letras_hexa = { "A", "B", "C", "D", "E", "F" };
+   private static String[] hex = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F" };
 
    public static HashMap<String, Simbolo> tabela = new HashMap<>();
 
@@ -187,6 +188,43 @@ public class Main {
          }
       }
       return result;
+   }
+
+   public static boolean isCaractere(String str) {
+      if (str.length() > 1)
+         return false;
+
+      char aux = str.replace('\'', ' ').trim().toCharArray()[0];
+
+      if (aux >= 0 && aux <= 255) {
+         return true;
+      }
+      return false;
+   }
+
+   public static boolean isHexa(String str) {
+      str = str.toLowerCase();
+      if (str.length() == 4) {
+         if (str.charAt(0) == '0') {
+            if (searchAlfabeto(str.charAt(1), hex)) {
+               if (searchAlfabeto(str.charAt(2), hex)) {
+                  if (str.charAt(3) == 'h') {
+                     return true;
+                  }
+               }
+            }
+         }
+      }
+      return false;
+   }
+
+   public static boolean isNumero(String str) {
+      try {
+         Integer.parseInt(str);
+      } catch (NumberFormatException nfe) {
+         return false;
+      }
+      return true;
    }
 
    public static void addTabela(Simbolo token) {
@@ -810,21 +848,22 @@ public class Main {
 
          if (token.getToken().equals("integer")) {
             ct("integer");
-            id1 = searchTabela(token.getToken()); // pesquisar pelo lexema ?
+            id1 = searchTabela(token.getLexema());
 
-            if (id1.getClasse().equals("")) {
+            if (id1 == null) {
+               id1 = token;
                id1.setClasse("var");
                id1.setTipo("integer");
+               
                ct("id");
-
-               // atualizar a tabela com o id1 ??
+               addTabela(id1);
 
                if (token.getToken().equals("=")) {
                   ct("=");
                   if (token.getToken().equals("-")) {
                      ct("-");
                   }
-                  // id2 = Exp(); fazer com que o exp retorne um simbolo
+                  //id2 = Exp(); fazer com que o exp retorne um simbolo
 
                   if (id2.getTipo().equals("integer")) {
                      id1.setValor(id2.getLexema());
@@ -835,7 +874,7 @@ public class Main {
                   }
                }
             } else {
-               System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+               System.out.print(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
                System.exit(0);
             }
 
@@ -850,7 +889,7 @@ public class Main {
 
                   // atualiza o alfabeto com o id1
                } else {
-                  System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+                  System.out.print(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
                   System.exit(0);
                }
 
@@ -922,7 +961,7 @@ public class Main {
                      id1.setValor(id2.getLexema());
                      // atualizar a tabela com o id1 de valor novo
                   } else {
-                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
                   }
                }
@@ -967,7 +1006,7 @@ public class Main {
 
                   // atualiza o alfabeto com o id1
                } else {
-                  System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+                  System.out.print(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
                   System.exit(0);
                }
 
@@ -979,7 +1018,7 @@ public class Main {
                      id1.setValor(id2.getLexema());
                      // atualizar a tabela com o id1 de valor novo
                   } else {
-                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
                   }
                }
@@ -1007,12 +1046,12 @@ public class Main {
                      id1.setValor(id2.getLexema());
                      // atualizar a tabela com o id1 de valor novo
                   } else {
-                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
                   }
                }
             } else {
-               System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+               System.out.print(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
                System.exit(0);
             }
 
@@ -1027,7 +1066,7 @@ public class Main {
 
                   // atualiza o alfabeto com o id1
                } else {
-                  System.out.println(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
+                  System.out.print(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
                   System.exit(0);
                }
 
@@ -1042,7 +1081,7 @@ public class Main {
                      id1.setValor(id2.getLexema());
                      // atualizar a tabela com o id1 de valor novo
                   } else {
-                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
                   }
                }
@@ -1070,7 +1109,7 @@ public class Main {
                      id1.setValor(id2.getLexema());
                      // atualizar a tabela com o id1 de valor novo
                   } else {
-                     System.out.println(linhas + "\ntipos incompativeis.");
+                     System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
                   }
                }
@@ -1104,7 +1143,7 @@ public class Main {
                   id1.setValor(id2.getLexema());
                   // atualizar a tabela com o id1 de valor novo
                } else {
-                  System.out.println(linhas + "\ntipos incompativeis.");
+                  System.out.print(linhas + "\ntipos incompativeis.");
                   System.exit(0);
                }
             }
@@ -1177,12 +1216,12 @@ public class Main {
                   // atualizar a tabela de simbolos
                } else {
                   System.out.println(linhas);
-                  System.out.println("identificador nao declarado [" + id2.getLexema() + "].");
+                  System.out.print("identificador nao declarado [" + id2.getLexema() + "].");
                   System.exit(0);
                }
             } else {
                System.out.println(linhas);
-               System.out.println("identificador ja declarado [" + token.getLexema() + "].");
+               System.out.print("identificador ja declarado [" + token.getLexema() + "].");
                System.exit(0);
             }
          }
@@ -1251,22 +1290,22 @@ public class Main {
                   id.setValor(aux2.getValor());
                } else {
                   System.out.println(linhas);
-                  System.out.println("tamanho do vetor excede o maximo permitido.");
+                  System.out.print("tamanho do vetor excede o maximo permitido.");
                   System.exit(0);
                }
             } else {
                System.out.println(linhas);
-               System.out.println("tipos incompativeis.");
+               System.out.print("tipos incompativeis.");
                System.exit(0);
             }
          }
       } else if (id.getClasse().equals("")) {
          System.out.println(linhas);
-         System.out.println("identificador nao declarado [" + id.getLexema() + "].");
+         System.out.print("identificador nao declarado [" + id.getLexema() + "].");
          System.exit(0);
       } else if (id.getClasse().equals("const")) {
          System.out.println(linhas);
-         System.out.println("classe de identificador incompativel [" + id.getLexema() + "].");
+         System.out.print("classe de identificador incompativel [" + id.getLexema() + "].");
 
          System.exit(0);
       }
@@ -1331,6 +1370,16 @@ public class Main {
       ct("readln");
       ct("(");
       ct("id");
+
+      Simbolo id = searchTabela(token.getLexema());
+      if(id == null){
+         System.out.print(linhas + "\nidentificador nao declarado [" + token.getLexema() + "].");
+      }else if(id.getClasse() == "const"){
+         System.out.print(linhas + "\nclasse de identificador incompatível [" + token.getLexema() + "].");
+      }else if(id.getTipo() == "boolean"){
+         System.out.print(linhas + "\ntipos incompativeis.");
+      }
+
       ct(")");
       ct(";");
    }
@@ -1353,75 +1402,290 @@ public class Main {
       ct(";");
    }
 
+   public static boolean ValidarSeString(Simbolo exp1, Simbolo exp2) {
+      return (exp1.getTipo().equals("char") && exp1.getTamanho() >= 0 && exp2.getTamanho() >= 0);
+   }
+
+   static boolean ValidarTiposOperadorExpInt(Simbolo exp1, Simbolo exp2) {
+        return (!ValidarSeString(exp1, exp2) && !exp1.getTipo().equals("boolean") && !exp2.getTipo().equals("boolean"))
+                && exp1.getTipo().equals(exp2.getTipo());
+    }
+
+    public static boolean ValidarSeVetor(Simbolo exp1, Simbolo exp2) {
+        if ((exp1.getEndereco() >= 0 && exp2.getEndereco() >= 0)
+                || (exp1.getEndereco() == -1 && exp2.getEndereco() >= 0)
+                || (exp1.getEndereco() >= 0 && exp2.getEndereco() == -1))
+            return true;
+        else if (exp1.getTamanho() == 0 && exp2.getTamanho() == 0)
+            return true;
+        else
+            return false;
+    }
+    
+
    // EXP
    // Exp_Soma1 [(== | != | < | > | <= | >=) Exp_Soma2]
-   public static void Exp() {
-      Exp_soma(); // exp soma1
+   public static Simbolo Exp() {
+      Simbolo exp1;
+      Simbolo exp2;
+      int operador = -1;
+
+      exp1 = Exp_soma(); // exp soma1
       if (token.getToken().equals("==") || token.getToken().equals("!=") || token.getToken().equals("<")
             || token.getToken().equals(">") || token.getToken().equals("<=") || token.getToken().equals(">=")) {
-         ct(token.getToken());
-         Exp_soma(); // exp soma2
+         if (token.getToken().equals("=")) {
+                ct("=");
+                operador = 0;
+            } else if (token.getToken().equals("<")) {
+                ct("<");
+                operador = 2;
+            } else if (token.getToken().equals(">")) {
+                ct(">");
+                operador = 3;
+            } else if (token.getToken().equals("<=")) {
+                ct("<=");
+                operador = 4;
+            } else if (token.getToken().equals(">=")) {
+                ct(">=");
+                operador = 5;
+            }
+
+            exp2 = Exp_soma();
+
+            if (operador == 0 && exp1.getTipo().equals(exp2.getTipo())
+                    && (ValidarSeString(exp1, exp2) || ValidarSeVetor(exp1, exp2))) {
+
+            } else if (operador == 1 && exp1.getTipo().equals(exp2.getTipo())
+                    && (ValidarSeString(exp1, exp2) || ValidarSeVetor(exp1, exp2))) {
+
+            } else if (operador == 3 && ValidarTiposOperadorExpInt(exp1, exp2) && ValidarSeVetor(exp1, exp2)) {
+
+            } else if (operador == 4 && ValidarTiposOperadorExpInt(exp1, exp2) && ValidarSeVetor(exp1, exp2)) {
+
+            } else if (operador == 5 && ValidarTiposOperadorExpInt(exp1, exp2) && ValidarSeVetor(exp1, exp2)) {
+
+            } else {
+                System.out.println(linhas);
+                System.out.println("tipos incompativeis.");
+                System.exit(0);
+            }
+
+      } else {
+         return exp1;
       }
+      return exp2;
    }
 
    // EXP SOMA
    // [+|-] Exp_Mult1 {(+ | - | or) Exp_Mult2 }
-   public static void Exp_soma() {
+   public static Simbolo Exp_soma() {
+      Simbolo exp_mult1;
+      Simbolo exp_mult2;
+      int operador = -1;
+      
       if (token.getToken().equals("+")) {
          ct("+");
       } else if (token.getToken().equals("-")) {
          ct("-");
       }
-      Exp_mult(); // exp mult1
-      while (token.getToken().equals("+") || token.getToken().equals("-") || token.getToken().equals("or")) {
-         ct(token.getToken());
-         Exp_mult(); // exp mult2
+      exp_mult1 = Exp_mult(); // exp mult1
+      if (token.getToken().equals("+") || token.getToken().equals("-") || token.getToken().equals("or")) {
+        if (token.getToken().equals("+")) {
+                ct("+");
+                operador = 0;
+            } else if (token.getToken().equals("-")) {
+                ct("-");
+                operador = 1;
+            } else if (token.getToken().equals("or")) {
+                ct("or");
+                operador = 2;
+            }
+
+            exp_mult2 = Exp_mult();
+
+            if (operador == 0 && exp_mult1.getTipo().equals("int") && exp_mult2.getTipo().equals("int")) {
+
+            } else if (operador == 1 && exp_mult1.getTipo().equals("int") && exp_mult2.getTipo().equals("int")) {
+
+            } else if (operador == 2 && exp_mult1.getTipo().equals("boolean")
+                  && exp_mult2.getTipo().equals("boolean")) {
+
+            } else {
+               System.out.println(linhas);
+               System.out.print("tipos incompativeis.");
+               System.exit(0);
+            }
+      } else {
+         return exp_mult1;
       }
+      return exp_mult2;
+
    }
 
    // EXP MULT
    // Fator1{ (* | / | and | // | %) Fator2 }
-   public static void Exp_mult() {
+   public static Simbolo Exp_mult() {
       Fator(); // fator 1
-      while (token.getToken().equals("*") || token.getToken().equals("/") || token.getToken().equals("and")
+      Simbolo fator1 = Fator();
+      Simbolo fator2;
+      int operador = -1;
+
+      if (token.getToken().equals("*") || token.getToken().equals("/") || token.getToken().equals("and")
             || token.getToken().equals("//") || token.getToken().equals("%")) {
-         ct(token.getToken());
-         Fator(); // fator2
+         if (token.getToken().equals("*")) {
+            ct("*");
+            operador = 0;
+         } else if (token.getToken().equals("/")) {
+            ct("/");
+            operador = 1;
+         } else if (token.getToken().equals("and")) {
+            ct("and");
+            operador = 2;
+         } else if (token.getToken().equals("%")) {
+            ct("%");
+            operador = 3;
+         } else if (token.getToken().equals("//")) {
+            ct("//");
+            operador = 4;
+         }
+
+         fator2 = Fator(); // fator2
+
+         boolean inteiros = fator1.getTipo().equals("integer") && fator2.getTipo().equals("integer");
+         boolean inteiroReal = (fator1.getTipo().equals("integer") && fator2.getTipo().equals("real")) || (fator1.getTipo().equals("real") && fator2.getTipo().equals("integer"));
+         boolean reais = fator1.getTipo().equals("real") && fator2.getTipo().equals("real");
+         Simbolo Exp_Multi = new Simbolo();
+         if (operador == 0 && inteiros) {
+            Exp_Multi.setTipo("integer");
+            // multiplicacao inteiros
+         } else if (operador == 1 && inteiros) {
+            Exp_Multi.setTipo("integer");
+            // divisão inteiros
+         } else if (operador == 2 && fator1.getTipo().equals("boolean") && fator2.getTipo().equals("boolean")) {
+            Exp_Multi.setTipo("integer");
+            // and
+         } else if (operador == 3 && inteiros) {
+            Exp_Multi.setTipo("integer");
+            // mod entre inteiros
+         } else if (operador == 4 && (reais || inteiroReal)) {
+            Exp_Multi.setTipo("real");
+            // divisao entre reais ou inteiro e real
+         } else if (operador == 0 && (reais || inteiroReal)) {
+            Exp_Multi.setTipo("real");
+            // multiplicacao entre reais ou inteiro e real
+         } else {
+            System.out.println(linhas);
+            System.out.print("tipos incompativeis.");
+            System.exit(0);
+         }
+      } else {
+         return fator1;
       }
+
+      return fator2;
    }
 
    // FATOR
    // id["[" Exp "]"] | constante | not Fator1 | "(" Exp ")" | integer "(" Exp ")"
    // |
    // real "(" Exp ")"
-   public static void Fator() {
+   public static Simbolo Fator() {
+      Simbolo resultado = new Simbolo();
+      Simbolo aux;
+
       if (token.getToken().equals("id")) {
-         ct("id");
-         if (token.getToken().equals("[")) {
-            ct("[");
-            Exp();
-            ct("]");
+         resultado = searchTabela(token.getLexema());
+
+         if (!resultado.getClasse().equals("")) {
+            ct("id");
+
+            if (token.getToken().equals("[")) {
+               ct("[");
+               // aux = Exp();
+               // ver a parada do tamanho do vetor aqui ? nem sei se é necessario
+
+               ct("]");
+            }
+
+         } else {
+            System.out.println(linhas);
+            System.out.print("identificador nao declarado [" + resultado.getLexema() + "].");
+            System.exit(0);
          }
       } else if (token.getToken().equals("not")) {
          ct("not");
-         Fator();
+
+         Simbolo fator = Fator();
+         Simbolo id = searchTabela(fator.getLexema());
+
+         if (fator.getToken().equals("id")) {
+            if (!id.getLexema().equals("")) {
+               if (id.getTipo().equals("boolean")) {
+                  //
+               } else {
+                  System.out.println(linhas);
+                  System.out.print("tipos incompativeis.");
+                  System.exit(0);
+               }
+            } else {
+               System.out.println(linhas);
+               System.out.print("identificador nao declarado [" + fator.getLexema() + "].");
+               System.exit(0);
+            }
+         } else if (fator.getToken().equals("const")) {
+            if (id.getTipo().equals("boolean")) {
+
+            } else {
+               System.out.println(linhas);
+               System.out.print("tipos incompativeis.");
+               System.exit(0);
+            }
+         } else {
+            System.out.println(linhas);
+            System.out.print("classe de identificador incompativel [" + fator.getLexema() + "].");
+            System.exit(0);
+         }
       } else if (token.getToken().equals("(")) {
          ct("(");
-         Exp();
+         // result = Exp();
          ct(")");
       } else if (token.getToken().equals("integer")) {
          ct("integer");
          ct("(");
-         Exp();
+         // result = Exp();
          ct(")");
       } else if (token.getToken().equals("real")) {
          ct("real");
          ct("(");
-         Exp();
+         // result = Exp();
          ct(")");
       } else {
+         if (isNumero(token.getLexema())) {
+            token.setTipo("integer");
+            token.setValor(token.getLexema());
+         } else if (isCaractere(token.getLexema())) {
+            token.setTipo("char");
+            token.setValor(token.getLexema());
+         } else if (isHexa(token.getLexema())) {
+            token.setTipo("hexa");
+            token.setValor(token.getLexema());
+         } else if (token.getLexema().equals("TRUE") || token.getLexema().equals("FALSE")) {
+            token.setTipo("boolean");
+            token.setValor(token.getLexema());
+         } else if (token.getLexema().length() > 0) {
+            token.setTipo("string");
+            token.setValor(token.getLexema());
+         } else {
+            System.out.println(linhas);
+            System.out.print("tipos incompativeis.");
+            System.exit(0);
+         }
+
+         aux = token;
          ct("const");
+         return aux;
       }
+      return resultado;
    }
 
    public static void main(String[] args) {
