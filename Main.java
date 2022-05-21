@@ -101,6 +101,7 @@ class Simbolo {
 public class Main {
    private static ArrayList<String> linhasArquivo;
    private static Simbolo token = new Simbolo();
+   private static Simbolo tokenL = new Simbolo();
    private static String[] file = readFile();
    static BufferedReader arquivo; // pode tirar, nao?
    private static int linhas = 1;
@@ -1220,18 +1221,56 @@ public class Main {
    // Comando de atribuicao
    // id = Exp ; | id "["Exp"]" = Exp ;
    public static void atribuicao() {
+      Simbolo id;
+      Simbolo aux = tokenL;
+
       ct("id");
-      if (token.getToken().equals("=")) {
-         ct("=");
-         Exp();
-      } else if (token.getToken().equals("[")) {
-         ct("[");
-         Exp();
-         ct("]");
-         ct("=");
-         Exp();
+      id = searchTabela(aux.getLexema());
+
+      if (id.getClasse().equals("var")) {
+         if (token.getToken().equals("[")) {
+            ct("[");
+            // testar os tipos e tamanhos
+            ct("]");
+
+            ct("=");
+
+            Exp(); // pegar o aux2
+         } else {
+            ct("=");
+            Simbolo aux2 = new Simbolo(); // só pra n dar erro
+
+            if ((id.getTipo().equals("int") && id.getTipo().equals(aux2.getTipo()))
+                  || id.getTipo().equals("char") && id.getTipo().equals(aux2.getTipo())
+                  || id.getTipo().equals("boolean") && id.getTipo().equals(aux2.getTipo())) {
+               id.setValor(aux2.getValor());
+            } else if (aux2.getTipo().equals("string") && id.getTipo().equals("char")) {
+               if (aux2.getValor().length() <= id.getTamanho()) {
+                  id.setValor(aux2.getValor());
+               } else {
+                  System.out.println(linhas);
+                  System.out.println("tamanho do vetor excede o maximo permitido.");
+                  System.exit(0);
+               }
+            } else {
+               System.out.println(linhas);
+               System.out.println("tipos incompativeis.");
+               System.exit(0);
+            }
+         }
+      } else if (id.getClasse().equals("")) {
+         System.out.println(linhas);
+         System.out.println("identificador nao declarado [" + id.getLexema() + "].");
+         System.exit(0);
+      } else if (id.getClasse().equals("const")) {
+         System.out.println(linhas);
+         System.out.println("classe de identificador incompativel [" + id.getLexema() + "].");
+
+         System.exit(0);
       }
       ct(";");
+
+      // atualizar tabela
    }
 
    // Comando de repeticao
