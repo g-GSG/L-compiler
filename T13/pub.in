@@ -1,9 +1,9 @@
-{*Exemplo de Programa na linguagem L 
+{* Exemplo de Programa na linguagem L *}
 
 integer n=1;
 string nome;
 const MAXITER=10;
-
+MAXITER=10;
 write("Digite seu nome: ");
 readln(nome);
 
@@ -12,4 +12,4 @@ while n<=MAXITER begin
   percentual=real(n)/MAXITER;
   writeln(percentual,": Ola' ",nome);
   n=n+1;
-end 
+end

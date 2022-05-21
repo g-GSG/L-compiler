@@ -189,6 +189,7 @@ public class Main {
    }
 
    public static void addTabela(Simbolo token) {
+      tabela.put(token.getLexema(),token);
    }
 
    public static char lerChar(int i) {
@@ -790,8 +791,7 @@ public class Main {
    }
 
    /*
-    * VARIAVEIS {(int | char | boolean | real | string) id1[ = [-] constante]
-    * {,id2[ = [-] constante ] }* ;}
+    * VARIAVEIS {(int | char | boolean | real | string) id1[ = [-] constante] {,id2[ = [-] constante ] }* ;}
     */
    public static void Variaveis() {
       while (token.getToken().equals("integer") || token.getToken().equals("char") || token.getToken().equals("real")
@@ -1055,6 +1055,8 @@ public class Main {
                id1.setClasse("var");
                id1.setTipo("string");
                ct("id");
+
+               addTabela(id1);
 
                // atualizar a tabela com o id1 ??
 
