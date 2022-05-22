@@ -1264,9 +1264,9 @@ public class Main {
                         id2.getTipo() == "char" ||
                         id2.getTipo() == "boolean" ||
                         id2.getTipo() == "string") {
-                     //id.setTipo(id2.getTipo());
+                     id.setTipo(id2.getTipo());
                      //id.setValor(id2.getValor());
-                     //addTabela(id);
+                     addTabela(id);
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
