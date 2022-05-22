@@ -1231,12 +1231,14 @@ public class Main {
       Simbolo id;
       Simbolo id2; // só pra não dar erro ja q ainda nao foi modificado o exp para retornar simbolo
       int sinal = 0;
+      String saida;
 
       while (token.getToken().equals("const")) {
          ct("const");
 
          if (token.getToken().equals("id")) {
-            id = searchTabela(token.getToken());
+            id = searchTabela(token.getLexema());
+            saida = token.getLexema();
 
             if (id == null) {
                id = token;
@@ -1283,7 +1285,7 @@ public class Main {
                }*/
             } else {
                System.out.println(linhas);
-               System.out.print("identificador ja declarado [" + token.getLexema() + "].");
+               System.out.print("identificador ja declarado [" + saida + "].");
                System.exit(0);
             }
          }
@@ -1573,7 +1575,7 @@ public class Main {
                resultado.setTipo("boolean");
             } else {
                 System.out.println(linhas);
-                System.out.println("tipos incompativeis.");
+                System.out.print("tipos incompativeis.");
                 System.exit(0);
             }
       } else {
