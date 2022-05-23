@@ -43,7 +43,7 @@ FATOR -> id $17$["[" Exp $16$"]"]| constante $20$ | not Fator1 $21$| "(" Exp ")"
 {24} - Se Exp.tipo != inteiro e Exp.tipo != real entao ERRO senao Fator.tipo = real
 {25} - Multi = verdadeiro
 {26} - Divisao_Real = verdadeiro
-{27} - And = verdadeiro  ****FALTANDO FAZER O AND****
+{27} - And = verdadeiro 
 {28} - Divisao_Inteiros = verdadeiro
 {29} - Resto - verdadeiro
 {30} - Se And = verdadeiro e (Fator1.tipo == logico e Fator2 == logico) entao EXP_MULT.tipo = logico
@@ -51,14 +51,11 @@ Se Fator1.tipo == inteiro e Fator2.tipo == inteiro e (Multi == verdadeiro ou Div
 senao (Se (Fator1.tipo == real ou Fator1.tipo == inteiro) e (Fator2.tipo == real ou Fator1.tipo == inteiro) e (Multi == verdadeiro ou Divisao_Real == verdadeiro) 
 entao EXP_MULT.tipo = real senao ERRO)
 {31} - ExpMult.tipo = fator1.tipo 
-MOV EAX,Fator1.lex
-EXP_MULT.end = NOVO TEMPORARIO
-MOV [qword M+EXP_MULT.end], EAX
 {32} - Se entrar flag_sinal_negativo - verdadeiro se não flag_sinal_negativo = falso
 {33} - EXP_SOMA.tipo = Exp_Mult1.tipo
 {34} - Soma = verdadeiro
 {35} - Subtração = verdadeiro
-{36} - OR = verdadeiro  ****FALTANDO FAZER O OR****
+{36} - OR = verdadeiro
 {37} - Se OR = verdadeiro e (Exp_Mult1.tipo == logico e Exp_Mult2 == logico) entao EXP_SOMA.tipo = logico
 Senao Exp_Mult1.tipo == inteiro e Exp_Mult2.tipo == inteiro e (Soma == verdadeiro ou Subtracao == verdadeiro) entao EXP_SOMA.tipo = inteiro 
 senao (Se (Exp_Mult1.tipo == real ou Exp_Mult1.tipo == inteiro) e (Exp_Mult2.tipo == real ou Exp_Mult2.tipo == inteiro) e (Soma == verdadeiro ou Subtracao == verdadeiro) 

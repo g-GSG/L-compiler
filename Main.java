@@ -16,7 +16,7 @@ class Simbolo {
    private String lexema = "";
    private String tipo = "";
    private String classe = "";
-   private int endereco = -1;
+   private String endereco = "";
    private int tamanho = 0;
    private String valor = "";
    private String token;
@@ -25,13 +25,13 @@ class Simbolo {
       this.lexema = "";
       this.tipo = "";
       this.classe = "";
-      this.endereco = -1;
+      this.endereco = "";
       this.tamanho = 0;
       this.valor = "";
       this.token = "";
    }
 
-   public Simbolo(String token, String lexema, String tipo, String classe, int endereco, int tamanho, String valor) {
+   public Simbolo(String token, String lexema, String tipo, String classe, String endereco, int tamanho, String valor) {
       this.lexema = lexema;
       this.token = token;
       this.tipo = tipo;
@@ -65,7 +65,7 @@ class Simbolo {
       return this.valor;
    }
 
-   public int getEndereco() {
+   public String getEndereco() {
       return this.endereco;
    }
 
@@ -93,7 +93,7 @@ class Simbolo {
       this.valor = valor;
    }
 
-   public void setEndereco(int endereco) {
+   public void setEndereco(String endereco) {
       this.endereco = endereco;
    }
 }
@@ -101,13 +101,19 @@ class Simbolo {
 public class Main {
    private static ArrayList<String> linhasArquivo;
    private static Simbolo token = new Simbolo();
-   private static String[] file = readFile();
+  private static String[] file = readFile();
    static BufferedReader arquivo; // pode tirar, nao?
    private static int linhas = 1;
    private static int index = 0;
-   private static int indexTabela = 0;
    private static boolean error = false;
    private static int numLinhasArquivo;
+   private static int endAtual;
+   private static int rotulo = 0;
+   private static int temp = 0;
+   private static File arquivoSaida;
+   private static String declarations = "section .data \nM: \nresb 10000h";
+   private static String code = "section .text \nglobal _start\n_start:\n";
+
 
    // Declaracao dos caracteres que fazem parte dos tokens da linguagem
    private static String[] alfabeto_simbolos = { "_", ".", ",", ";", "(", ")", "[", "]", "+", "-", "'", "\"",
@@ -175,8 +181,27 @@ public class Main {
       return results;
    }
 
-   public static Simbolo searchTabela(String tok) {
-      return tabela.get(tok); // retorna null se nao estiver presente
+//Criação do arquivo para escrita dos comandos em assembly
+   public static void createFile(){
+      try {
+         arquivoSaida = new File("arquivoSaida.asm");
+         if (!arquivoSaida.createNewFile()) {
+            new FileOutputStream(arquivoSaida).close();
+         } 
+       } catch (IOException e) {
+       }
+   }
+
+   public static void writeDeclaration(String conteudo){
+      declarations+= conteudo;
+   }
+
+   public static void writeCode(String conteudo){
+      code += conteudo;
+   }
+
+   public static Simbolo searchTabela(String lexema) {
+      return tabela.get(lexema); // retorna null se nao estiver presente
    }
 
    public static boolean searchAlfabeto(char tok, String[] alfabeto) {
@@ -235,6 +260,10 @@ public class Main {
       tabela.put(token.getLexema(),token);
    }
 
+   public static void removeTabela(Simbolo token) {
+      tabela.remove(token.getLexema());
+   }
+
    public static char lerChar(int i) {
       return file[0].charAt(i);
    }
@@ -245,8 +274,6 @@ public class Main {
       int estado = 0;
       String lex = "";
       numLinhasArquivo = Integer.parseInt(file[1]);
-
-      // System.out.println(file);
 
       // Enquanto for um estado valido, o analisador lexico ira procurar por um token
       while (estado != -1) {
@@ -755,7 +782,7 @@ public class Main {
 
    }
 
-   /* ANALISADOR SINTATICO */
+   /* ANALISADOR SINTATICO E SEMANTICO*/
 
    // Metodo do CasaToken para identificar se o token lido corresponde as regras da
    // gramatica
@@ -778,6 +805,18 @@ public class Main {
             System.exit(0);
          }
       }
+   }
+
+   public static int NovoRotulo() {
+      int aux = rotulo;
+      rotulo += 1;
+      return aux;
+   }
+
+   public static int NovoTemp(int bytes) {
+      int aux = temp;
+      temp += bytes;
+      return aux;
    }
 
    /*
@@ -821,6 +860,13 @@ public class Main {
       }
    }
 
+   public static Simbolo addEndereco(Simbolo simbolo, int bytes, String instrucao){
+      simbolo.setEndereco(endAtual + "h");
+      endAtual+= bytes;
+      writeDeclaration(instrucao+"\n");
+      return simbolo;
+   }
+
    /*
     * Declaracao -> Variaveis | Constantes
     */
@@ -839,25 +885,17 @@ public class Main {
     public static void Variaveis() {
       while (token.getToken().equals("integer") || token.getToken().equals("char") || token.getToken().equals("real")
             || token.getToken().equals("string") || token.getToken().equals("boolean")) {
- // só pra não dar erro ja q ainda nao foi modificado o exp para retornar simbolo
-
-         // substituido pela parte debaixo
-         /*
-          * ct(token.getToken()); // aqui ele ta pegando e ja casando direto, vai ter de
-          * ir pra dentro de um if
-          * // testando o tipo e setando a classe
-          * ct("id");
-          */
-
          if (token.getToken().equals("integer")) {
             ct("integer");
             Simbolo id1;
             Simbolo id2;
-            id1 = searchTabela(token.getLexema());
+            Simbolo exp;
+            id1 = searchTabela(token.getLexema()); //Procura de o id ja foi declarado anteriormente
             if (id1 == null) {
                id1 = token;
-               id1.setClasse("var");
+               id1.setClasse("var");  //Iniciacao da classe e tipo do token, alem de fazer a traducao para os comandos de assembly
                id1.setTipo("integer");
+               id1 = addEndereco(id1, 4, "resd 1");
                ct("id");
                addTabela(id1);
 
@@ -867,11 +905,10 @@ public class Main {
                      ct("-");
                   }
 
-                  id2 = Exp();
+                  exp = Exp();
 
-                  if (id2.getTipo().equals("integer")) {
-                     //id1.setValor(id2.getLexema());
-                     // atualizar a tabela com o id1 de valor novo
+                  if (exp.getTipo().equals("integer")) {
+                     id1.setValor(exp.getLexema()); 
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
@@ -884,14 +921,15 @@ public class Main {
 
             while (token.getToken().equals(",")) {
                ct(",");
-               id1 = searchTabela(token.getLexema());
+               id2 = searchTabela(token.getLexema());
 
-               if (id1 == null) {
-                  id1 = token;
-                  id1.setClasse("var");
-                  id1.setTipo("integer");
+               if (id2 == null) {
+                  id2 = token;
+                  id2.setClasse("var");
+                  id2.setTipo("integer");
+                  id2 = addEndereco(id2, 4, "resd 1");
                   ct("id");
-                  addTabela(id1);
+                  addTabela(id2);
                } else {
                   System.out.print(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
                   System.exit(0);
@@ -903,10 +941,10 @@ public class Main {
                      ct("-");
                   }
                   
-                  id2 = Exp();
+                  exp = Exp();
 
-                  if (id2.getTipo().equals("integer")) {
-                     /*id1.setValor(id2.getLexema());*/
+                  if (exp.getTipo().equals("integer")) {
+                     id2.setValor(exp.getLexema());
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
@@ -918,12 +956,14 @@ public class Main {
             ct("char");
             Simbolo id1;
             Simbolo id2;
+            Simbolo exp;
             id1 = searchTabela(token.getLexema());
 
             if (id1 == null) {
                id1 = token;
                id1.setClasse("var");
                id1.setTipo("char");
+               id1 = addEndereco(id1, 1, "resb 1");
                ct("id");
 
                addTabela(id1);
@@ -935,11 +975,10 @@ public class Main {
                      System.exit(0);
                   }
                   
-                  id2 = Exp();
+                  exp = Exp();
 
-                  if (id2.getTipo().equals("char")) {
-                     /*id1.setValor(id2.getLexema());*/
-                     // atualizar a tabela com o id1 de valor novo
+                  if (exp.getTipo().equals("char")) {
+                     id1.setValor(exp.getLexema());
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
@@ -952,15 +991,15 @@ public class Main {
 
             while (token.getToken().equals(",")) {
                ct(",");
-               id1 = searchTabela(token.getLexema());
+               id2 = searchTabela(token.getLexema());
 
-               if (id1 == null) {
-                  id1 = token;
-                  id1.setClasse("var");
-                  id1.setTipo("char");
+               if (id2 == null) {
+                  id2 = token;
+                  id2.setClasse("var");
+                  id2.setTipo("char");
+                  id2 = addEndereco(id2, 1, "resb 1");
                   ct("id");
-                  addTabela(id1);
-                  // atualiza o alfabeto com o id1
+                  addTabela(id2);
                } else {
                   System.out.print(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
                   System.exit(0);
@@ -974,10 +1013,10 @@ public class Main {
                      System.exit(0);
                   } 
 
-                  id2 = Exp();
+                  exp = Exp();
 
-                  if (id2.getTipo().equals("char")) {
-                     //id1.setValor(id2.getLexema());
+                  if (exp.getTipo().equals("char")) {
+                     id2.setValor(exp.getLexema());
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
@@ -987,17 +1026,17 @@ public class Main {
             ct(";");
          } else if (token.getToken().equals("boolean")) {
             ct("boolean");
-            // System.out.println(token.getLexema()); // l
             Simbolo id1;
             Simbolo id2;
+            Simbolo exp;
             id1 = searchTabela(token.getLexema());
 
             if (id1 == null) {
                id1 = token;
                id1.setClasse("var");
                id1.setTipo("boolean");
+               id1 = addEndereco(id1, 4, "resd 1");
                ct("id");
-
                addTabela(id1);
 
                if (token.getToken().equals("=")) {
@@ -1006,9 +1045,9 @@ public class Main {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
                   }
-                  id2 = Exp();
-                  if (id2.getTipo().equals("boolean")) {
-                     //id1.setValor(id2.getLexema());
+                  exp = Exp();
+                  if (exp.getTipo().equals("boolean")) {
+                     id1.setValor(exp.getLexema());
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
@@ -1021,14 +1060,15 @@ public class Main {
 
             while (token.getToken().equals(",")) {
                ct(",");
-               id1 = searchTabela(token.getLexema());
+               id2 = searchTabela(token.getLexema());
 
-               if (id1 == null) {
-                  id1 = token;
-                  id1.setClasse("var");
-                  id1.setTipo("boolean");
+               if (id2 == null) {
+                  id2 = token;
+                  id2.setClasse("var");
+                  id2.setTipo("boolean");
+                  id2 = addEndereco(id2, 4, "resd 1");
                   ct("id");
-                  addTabela(id1);
+                  addTabela(id2);
                } else {
                   System.out.print(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
                   System.exit(0);
@@ -1040,11 +1080,10 @@ public class Main {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
                   }
-                  id2 = Exp();
+                  exp = Exp();
 
-                  if (id2.getTipo().equals("boolean")) {
-                     //id1.setValor(id2.getLexema());
-                     // atualizar a tabela com o id1 de valor novo
+                  if (exp.getTipo().equals("boolean")) {
+                     id2.setValor(exp.getLexema());
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
@@ -1056,13 +1095,15 @@ public class Main {
             ct("real");
             Simbolo id1;
             Simbolo id2;
+            Simbolo exp;
 
-            id1 = searchTabela(token.getLexema()); // pesquisar pelo lexema ?
+            id1 = searchTabela(token.getLexema());
             
             if (id1 == null) {
                id1 = token;
                id1.setClasse("var");
                id1.setTipo("real");
+               id1 = addEndereco(id1, 4, "resd 1");
                ct("id");
 
                addTabela(id1);
@@ -1073,11 +1114,10 @@ public class Main {
                      ct("-");
                   }
 
-                  id2 = Exp();
+                  exp = Exp();
 
-                  if (id2.getTipo().equals("real") || id2.getTipo().equals("integer")) {
-                     //id1.setValor(id2.getLexema());
-                     // atualizar a tabela com o id1 de valor novo
+                  if (exp.getTipo().equals("real") || exp.getTipo().equals("integer")) {
+                     id1.setValor(exp.getLexema());
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
@@ -1090,16 +1130,15 @@ public class Main {
 
             while (token.getToken().equals(",")) {
                ct(",");
-               id1 = searchTabela(token.getLexema());
+               id2 = searchTabela(token.getLexema());
 
-               if (id1 == null) {
-                  id1 = token;
-                  id1.setClasse("var");
-                  id1.setTipo("real");
+               if (id2 == null) {
+                  id2 = token;
+                  id2.setClasse("var");
+                  id2.setTipo("real");
+                  id2 = addEndereco(id2, 4, "resd 1");
                   ct("id");
-
-                  // atualiza o alfabeto com o id1
-                  addTabela(id1);
+                  addTabela(id2);
                } else {
                   System.out.print(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
                   System.exit(0);
@@ -1110,11 +1149,10 @@ public class Main {
                   if (token.getToken().equals("-")) {
                      ct("-");
                   }
-                  id2 = Exp(); 
+                  exp = Exp(); 
 
-                  if ((id2.getTipo().equals("real") || id2.getTipo().equals("integer"))) {
-                     //id1.setValor(id2.getLexema());
-                     // atualizar a tabela com o id1 de valor novo
+                  if ((exp.getTipo().equals("real") || exp.getTipo().equals("integer"))) {
+                     id2.setValor(exp.getLexema());
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
@@ -1125,18 +1163,17 @@ public class Main {
          } else if (token.getToken().equals("string")) {
             Simbolo id1;
             Simbolo id2;
-            ct("string"); // o acesso a posicao de strings é feito no comando de atribuicao
-            id1 = searchTabela(token.getLexema()); // pesquisar pelo lexema ?
+            Simbolo exp;
+            ct("string"); 
+            id1 = searchTabela(token.getLexema()); 
 
             if (id1 == null) {
                id1 = token;
                id1.setClasse("var");
                id1.setTipo("string");
+               id1 = addEndereco(id1, 100, "resb 100h");
                ct("id");
-
                addTabela(id1);
-
-               // atualizar a tabela com o id1 ??
 
                if (token.getToken().equals("=")) {
                   ct("=");
@@ -1144,12 +1181,10 @@ public class Main {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
                   }
-                  id2 = Exp();
-                  // acho que no caso de string n vai pegar de exp o id2
+                  exp = Exp();
 
-                  if (id2.getTipo().equals("string")) {
-                     //id1.setValor(id2.getLexema());
-                     // atualizar a tabela com o id1 de valor novo
+                  if (exp.getTipo().equals("string")) {
+                     id1.setValor(exp.getLexema());
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
@@ -1162,16 +1197,15 @@ public class Main {
 
             while (token.getToken().equals(",")) {
                ct(",");
-               id1 = searchTabela(token.getLexema());
+               id2 = searchTabela(token.getLexema());
 
-               if (id1 == null) {
-                  id1 = token;
-                  id1.setClasse("var");
-                  id1.setTipo("string");
+               if (id2 == null) {
+                  id2 = token;
+                  id2.setClasse("var");
+                  id2.setTipo("string");
+                  id2 = addEndereco(id2, 100, "resb 100h");
                   ct("id");
-
-                  // atualiza o alfabeto com o id1
-                  addTabela(id1);
+                  addTabela(id2);
                } else {
                   System.out.print(linhas + "\nidentificador ja declarado [" + token.getLexema() + "].");
                   System.exit(0);
@@ -1184,12 +1218,10 @@ public class Main {
                      System.exit(0);
                   }
                }
-               id2 = Exp(); 
-               // acho que no caso de string n vai pegar de exp o id2
+               exp = Exp(); 
 
-               if (id2.getTipo().equals("string")) {
-                  //id1.setValor(id2.getLexema());
-                  // atualizar a tabela com o id1 de valor novo
+               if (exp.getTipo().equals("string")) {
+                  id2.setValor(exp.getLexema());
                } else {
                   System.out.print(linhas + "\ntipos incompativeis.");
                   System.exit(0);
@@ -1197,39 +1229,17 @@ public class Main {
             }
             ct(";");
          }
-         /*
-          * tudo isso foi substituido pela parte de cima ^
-          * if (token.getToken().equals("=")) {
-          * ct("=");
-          * if (token.getToken().equals("-")) {
-          * ct("-");
-          * }
-          * ct("const"); // -> valor constante
-          * }
-          * 
-          * while (token.getToken().equals(",")) {
-          * ct(",");
-          * ct("id");
-          * if (token.getToken().equals("=")) {
-          * ct("=");
-          * if (token.getToken().equals("-")) {
-          * ct("-");
-          * }
-          * ct("const"); // -> valor constante
-          * }
-          * }
-          * ct(";");
-          */
       }
 
    }
+   
    
    /*
     * CONSTANTES {const id = [-] constante;}*
     */
    public static void Constantes() {
       Simbolo id;
-      Simbolo id2; // só pra não dar erro ja q ainda nao foi modificado o exp para retornar simbolo
+      Simbolo exp;
       int sinal = 0;
       String saida;
 
@@ -1244,7 +1254,6 @@ public class Main {
                id = token;
                id.setClasse("const");
                ct("id");
-               addTabela(id);
                ct("=");
 
                if (token.getToken().equals("-")) {
@@ -1252,53 +1261,40 @@ public class Main {
                   sinal = 1;
                }
                
-               id2 = Exp();
+               exp = Exp();
 
-               if(sinal == 1 && !(id2.getTipo().equals("integer") || 
-               id2.getTipo().equals("real"))){
+               if(sinal == 1 && !(exp.getTipo().equals("integer") || 
+               exp.getTipo().equals("real"))){
                   System.out.print(linhas + "\ntipos incompativeis.");
                   System.exit(0);
                }
 
-               if (id2.getToken().equals("const")) {
-                  if (id2.getTipo().equals("real") ||
-                        id2.getTipo() == "integer" ||
-                        id2.getTipo() == "char" ||
-                        id2.getTipo() == "boolean" ||
-                        id2.getTipo() == "string") {
-                     id.setTipo(id2.getTipo());
-                     //id.setValor(id2.getValor());
+               if (exp.getToken().equals("const")) {
+                  
+                  if (exp.getTipo().equals("real") || exp.getTipo() == "integer" || exp.getTipo() == "boolean"){
+                     id.setTipo(exp.getTipo());
+                     id.setValor(exp.getValor());
+                     id.setEndereco(exp.getEndereco());
+                     id.setTamanho(4);
+                     addTabela(id);
+                  } else if ( exp.getTipo() == "char"  || exp.getTipo() == "string"){
+                     id.setTipo(exp.getTipo());
+                     id.setTipo(exp.getTipo());
+                     id.setValor(exp.getValor());
+                     id.setTamanho(exp.getValor().length());
+                     id.setEndereco(exp.getEndereco());
                      addTabela(id);
                   } else {
                      System.out.print(linhas + "\ntipos incompativeis.");
                      System.exit(0);
                   }
-               } /*else if (id2.getToken().equals("id") && !id2.getClasse().equals("")) {
-                  id.setTipo(id2.getTipo());
-                  id.setValor(id2.getValor());
-                  // atualizar a tabela de simbolos
-
-               } else {
-                  System.out.println(linhas);
-                  System.out.print("identificador nao declarado [" + id2.getLexema() + "].");
-                  System.exit(0);
-               }*/
+               } 
             } else {
                System.out.println(linhas);
                System.out.print("identificador ja declarado [" + saida + "].");
                System.exit(0);
             }
          }
-         // codigo substituido pelo código acima ^
-         /*
-          * ct("const");
-          * ct("id");
-          * ct("=");
-          * if (token.getToken().equals("-")) {
-          * ct("-");
-          * }
-          * ct("const");
-          */
          ct(";");
       }
    }
@@ -1342,6 +1338,7 @@ public class Main {
                ct("[");
                // testar os tipos e tamanhos
                Simbolo indice = Exp();
+               temp = 0;
                if (!indice.getTipo().equals("integer")){
                   System.out.println(linhas);
                   System.out.print("tipos incompativeis.");
@@ -1351,13 +1348,27 @@ public class Main {
 
                ct("=");
 
-               Simbolo exp = Exp(); // pegar o aux2
+               Simbolo exp = Exp(); 
+               temp = 0;
                if (!exp.getTipo().equals("char")) {
                   System.out.println(linhas);
                   System.out.print("tipos incompativeis.");
                   System.exit(0);
                } else {
-                  // acho que geracao de codigo
+           
+                  int nt = NovoTemp(4); // novo temp pra id.end
+                  id.setEndereco(Integer.toString(nt));
+                  String mov = ("mov rax, [qword M+" + Integer.parseInt(aux.getEndereco()) + "]\n"); // exp.end ->
+                                                                                                           // reg 64
+                                                                                                           // bits, reg1
+                  String mov2 = ("mov rbx, [qword M+" + (id.getEndereco()) + "]\n");
+                  String add = ("add rax,rbx\n"); // id.end + reg1
+                  String mov3 = ("mov rcx, rbx\n");// carregar reg1 p/ reg2
+                  String mov4 = ("mov [qword M+" + nt + "], rcx\n"); // reg2 p/ o novo temp
+                  writeCode(mov + mov2 + add + mov3 + mov4); // acesso a posição no vetor
+                  String mov5 = ("mov rax, [qword M+" + exp.getEndereco() + "]\n"); // pega o valor a ser atribuido a posicao
+                  String mov6 = ("mov [qword M+" + nt + "], rax"); // colocar o valor na posicao (em novo temporario)
+                  writeCode(mov5 + mov6);
                }
             } else {
                System.out.println(linhas);
@@ -1367,13 +1378,22 @@ public class Main {
          } else {
             ct("=");
             Simbolo aux2 = Exp();
+            temp = 0;
 
             if ((id.getTipo().equals("integer") && id.getTipo().equals(aux2.getTipo()))
                   || id.getTipo().equals("char") && id.getTipo().equals(aux2.getTipo())
                   || id.getTipo().equals("boolean") && id.getTipo().equals(aux2.getTipo())
                   || id.getTipo().equals("real") && id.getTipo().equals(aux2.getTipo())
+                  || id.getTipo().equals("string") && id.getTipo().equals(aux2.getTipo())
                   || id.getTipo().equals("real") && aux2.getTipo().equals("integer")) {
                id.setValor(aux2.getValor()); 
+               if (!id.getTipo().equals("string")) {
+                  // mover caractere a carectere
+               } else {
+                  String mov = ("mov eax, [qword M+" + aux2.getEndereco() + "]\n");
+                  String mov2 = ("mov [qword M+" + id.getEndereco() + "], eax\n");
+                  writeCode(mov + mov2);
+               }
             } else {
                System.out.println(linhas);
                System.out.print("tipos incompativeis.");
@@ -1387,8 +1407,9 @@ public class Main {
          System.exit(0);
       }
       ct(";");
-
-      // atualizar tabela
+      // atualiza na tabela
+      removeTabela(searchTabela(aux.getLexema()));
+      addTabela(id);
    }
 
    // Comando de repeticao
@@ -1396,6 +1417,7 @@ public class Main {
    public static void repeticao() {
       ct("while");
       Simbolo exp = Exp();
+      temp = 0;
       if (!exp.getTipo().equals("boolean")){
          System.out.println(linhas);
          System.out.print("tipos incompativeis.");
@@ -1419,6 +1441,7 @@ public class Main {
    public static void condicional() {
       ct("if");
       Simbolo exp = Exp();
+      temp = 0;
 
       if(!exp.getTipo().equals("boolean")){
          System.out.print(linhas + "\ntipos incompativeis.");
@@ -1464,13 +1487,14 @@ public class Main {
       if(id == null){
          System.out.print(linhas + "\nidentificador nao declarado [" + saida + "].");
          System.exit(0);
-      }else if(id.getClasse() == "const"){
+      } else if(id.getClasse() == "const"){
          System.out.print(linhas + "\nclasse de identificador incompativel [" + saida + "].");
          System.exit(0);
-      }else if(id.getTipo() == "boolean"){
+      } else if(id.getTipo() == "boolean"){
          System.out.print(linhas + "\ntipos incompativeis.");
          System.exit(0);
       }
+      // !!
 
       ct(")");
       ct(";");
@@ -1479,29 +1503,136 @@ public class Main {
    // Comando de impressao
    // (write | writeln) "(" Exp {,Exp}* ")";
    public static void escrita() {
+      boolean enterFinal = false;
       if (token.getToken().equals("write")) {
          ct("write");
       } else {
          ct("writeln");
+         enterFinal = true;
       }
       ct("(");
       Simbolo exp = Exp();
+      temp = 0;
       if (exp.getTipo().equals("boolean")) {
          System.out.println(linhas);
          System.out.print("tipos incompativeis.");
          System.exit(0);
       }
+      if (enterFinal) exp.setLexema(exp.getLexema() + "\n");
       while (token.getToken().equals(",")) {
          ct(",");
          Simbolo exp2 = Exp();
+         temp = 0;
          if (exp2.getTipo().equals("boolean")) {
             System.out.println(linhas);
             System.out.print("tipos incompativeis.");
             System.exit(0);
          }
+         if (enterFinal) exp2.setLexema(exp2.getLexema() + "\n");
       }
+      
       ct(")");
       ct(";");
+
+      if (exp.getTipo().equals("integer")) {
+         int novoTemp = NovoTemp(4);
+         writeCode("mov eax, [qword M+" + exp.getEndereco() + "]\n");
+         writeCode("mov rsi, [qword M+" + novoTemp + "]\n" );
+         writeCode("mov rcx, 0 \n");
+         writeCode("mov rdi, 0 \n");
+         writeCode("cmp eax, 0 \n");
+         writeCode("jge Rot0 \n");
+         writeCode("mov bl, \'-\' \n");
+         writeCode("mov [rsi], bl \n");
+         writeCode("add rsi, 1 \n");
+         writeCode("add rdi, 1 \n");
+         writeCode("neg eax \n");
+         writeCode("Rot0: \n");
+         writeCode("mov ebx, 10 \n");
+         writeCode("Rot1: \n");
+         writeCode("add rcx, 1 \n");
+         writeCode("cdq \n");
+         writeCode("idiv ebx \n");
+         writeCode("push dx \n");
+         writeCode("cmp eax, 0 \n");
+         writeCode("jne Rot1 \n");
+         writeCode("add rdi,rcx \n");
+         writeCode("Rot2: \n");
+         writeCode("pop dx \n");
+         writeCode("add dl, \'0\' \n");
+         writeCode("mov [rsi], dl \n");
+         writeCode("add rsi, 1 \n");
+         writeCode("sub rcx, 1 \n");
+         writeCode("cmp rcx, 0 \n");
+         writeCode("jne Rot2 \n");
+         // funcao de saida
+      } else if (exp.getTipo().equals("real")) {
+         int novoTemp = NovoTemp(4);
+         writeCode("movss xmm0, [qword M+" + exp.getEndereco() + "]\n");
+         writeCode("mov rsi, [qword M+" + novoTemp + "]\n");
+         writeCode("mov rcx, 0 \n");
+         writeCode("mov rdi, 6 \n");
+         writeCode("mov rbx, 10 \n");
+         writeCode("cvtsi2ss xmm2, rbx \n");
+         writeCode("subss xmm1, xmm1 \n");
+         writeCode("comiss xmm0, xmm1 \n");
+         writeCode("jae Rot0 \n");
+         writeCode("mov dl, \'-\' \n");
+         writeCode("mov [rsi], dl \n");
+         writeCode("mov rdx, -1 \n");
+         writeCode("cvtsi2ss xmm1, rdx \n");
+         writeCode("mulss xmm0, xmm1 \n");
+         writeCode("add rsi, 1 \n");
+         writeCode("Rot0: \n");
+         writeCode("roundss xmm1, xmm0, 0b0011 \n");
+         writeCode("subss xmm0, xmm1 \n");
+         writeCode("cvtss2si rax, xmm1 \n");
+         writeCode("Rot1: \n");
+         writeCode("add rcx, 1 \n");
+         writeCode("cdq \n");
+         writeCode("idiv ebx \n");
+         writeCode("push dx \n");
+         writeCode("cmp eax, 0 \n");
+         writeCode("jne Rot1 \n");
+         writeCode("sub rdi, rcx \n");
+         writeCode("Rot2: \n");
+         writeCode("pop dx \n");
+         writeCode("add dl, \'0\' \n");
+         writeCode("mov [rsi], dl \n");
+         writeCode("add rsi, 1 \n");
+         writeCode("sub rcx, 1 \n");
+         writeCode("cmp rcx, 0 \n");
+         writeCode("jne Rot2 \n");
+         writeCode("mov dl, \'.\' \n");
+         writeCode("mov [rsi], dl \n");
+         writeCode("add rsi, 1 \n");
+         writeCode("Rot3: \n");
+         writeCode("cmp rdi, 0 \n");
+         writeCode("jle Rot4 \n");
+         writeCode("mulss xmm0,xmm2 \n");
+         writeCode("roundss xmm1,xmm0,0b0011 \n");
+         writeCode("subss xmm0,xmm1 \n");
+         writeCode("cvtss2si rdx, xmm1 \n");
+         writeCode("add dl, \'0\' \n");
+         writeCode("mov [rsi], dl \n");
+         writeCode("add rsi, 1 \n");
+         writeCode("sub rdi, 1 \n");
+         writeCode("jmp Rot3 \n");
+         writeCode("Rot4: \n");
+         writeCode("mov dl, 0 \n");
+         writeCode("mov [rsi], dl \n");
+         writeCode("mov rdx, rsi \n");
+         writeCode("mov rbx, [qword M+" + novoTemp + "\n");
+         writeCode("sub rdx, rbx \n");
+         writeCode("mov rsi, [qword M+" + novoTemp + "\n");
+      } else {
+         writeCode("mov rsi, [qword M+ " + exp.getEndereco() + "]\n" +
+               "mov rdx, " + exp.getTamanho() +" \n " +
+               "mov rax, 1 \n" +
+               "mov rdi, 1 \n" +
+               "syscall\n");
+      }
+
    }
 
    public static boolean ValidarSeString(Simbolo exp1, Simbolo exp2) {
@@ -1512,18 +1643,6 @@ public class Main {
         return (!ValidarSeString(exp1, exp2) && !exp1.getTipo().equals("boolean") && !exp2.getTipo().equals("boolean"))
                 && exp1.getTipo().equals(exp2.getTipo());
     }
-
-    public static boolean ValidarSeVetor(Simbolo exp1, Simbolo exp2) {
-        if ((exp1.getEndereco() >= 0 && exp2.getEndereco() >= 0)
-                || (exp1.getEndereco() == -1 && exp2.getEndereco() >= 0)
-                || (exp1.getEndereco() >= 0 && exp2.getEndereco() == -1))
-            return true;
-        else if (exp1.getTamanho() == 0 && exp2.getTamanho() == 0)
-            return true;
-        else
-            return false;
-    }
-    
 
    // EXP
    // Exp_Soma1 [(== | != | < | > | <= | >=) Exp_Soma2]
@@ -1597,26 +1716,32 @@ public class Main {
          sinal = 1;
       } else if (token.getToken().equals("-")) {
          ct("-");
-         sinal = 1;
+         sinal = 2;
       }
       exp_mult1 = Exp_mult(); // exp mult1
 
-      if(exp_mult1.getTipo().equals("boolean") && sinal == 1){
+      if(exp_mult1.getTipo().equals("boolean") && sinal != 0){
          System.out.println(linhas);
          System.out.print("tipos incompativeis.");
          System.exit(0);
       }
 
+      if(sinal == 2) {
+         writeCode("mov eax, [qword M+" + exp_mult1.getEndereco()+"]");
+         writeCode("neg eax");
+         writeCode("mov [qword M+" + exp_mult1.getEndereco()+ "], eax");
+      }
+
       if (token.getToken().equals("+") || token.getToken().equals("-") || token.getToken().equals("or")) {
          if (token.getToken().equals("+")) {
-                ct("+");
-                operador = 0;
+            ct("+");
+            operador = 0;
          } else if (token.getToken().equals("-")) {
-                ct("-");
-                operador = 1;
+            ct("-");
+            operador = 1;
          } else if (token.getToken().equals("or")) {
-                ct("or");
-                operador = 2;
+            ct("or");
+            operador = 2;
          }
 
          exp_mult2 = Exp_mult();
@@ -1627,10 +1752,36 @@ public class Main {
 
          if ((operador == 0 || operador == 1) && inteiros) {
             exp_mult2.setTipo("integer");
+            writeCode("mov eax, [qword M+" + exp_mult1.getEndereco()+"]");
+            writeCode("mov ebx, [qword M+" + exp_mult2.getEndereco()+"]");
+            if (operador == 0) writeCode("add eax ebx");
+            if (operador == 1) writeCode("sub eax ebx");
+            writeCode("mov [qword M+" + exp_mult2.getEndereco()+ "], eax");
          } else if ((operador == 0 || operador == 1) && (inteiroReal || reais)) {
             exp_mult2.setTipo("real");
+            writeCode("mov eax, [qword M+" + exp_mult1.getEndereco()+"]");
+            writeCode("mov ebx, [qword M+" + exp_mult2.getEndereco()+"]");
+            if (operador == 0) writeCode("addss eax ebx");
+            if (operador == 1) writeCode("subss eax ebx");
+            writeCode("mov [qword M+" + exp_mult2.getEndereco()+ "], eax");
          } else if (operador == 2 && exp_mult1.getTipo().equals("boolean") && exp_mult2.getTipo().equals("boolean")) {
             exp_mult2.setTipo("boolean");
+            writeCode("mov eax, [qword M+" + exp_mult1.getEndereco()+"]");
+            writeCode("mov ebx, [qword M+" + exp_mult2.getEndereco()+"]");
+            writeCode("cmp eax, 0");
+            writeCode("cmp ebx, 0");
+            writeCode("mov eax, [qword M+" + exp_mult2.getEndereco()+"]");
+            writeCode("cmp eax, 1");
+            writeCode("cmp ebx, 0");
+            writeCode("mov eax, [qword M+" + exp_mult2.getEndereco()+"]");
+            writeCode("cmp eax, 1");
+            writeCode("cmp ebx, 1");
+            writeCode("mov eax, [qword M+" + exp_mult2.getEndereco()+"]");
+            writeCode("cmp eax, 0");
+            writeCode("cmp ebx, 1");
+            writeCode("mov ebx, [qword M+" + exp_mult2.getEndereco()+"]");
+            
+            writeCode("mov [qword M+" + exp_mult2.getEndereco()+ "], eax");
          } else {
                System.out.println(linhas);
                System.out.print("tipos incompativeis.");
@@ -1697,11 +1848,11 @@ public class Main {
             System.exit(0);
          }
       } else {
-         Exp_Multi.setTipo(fator1.getTipo());
-         return fator1;
+         Exp_Multi = fator1;
+         return Exp_Multi;
       }
 
-      return Exp_Multi; // return fator2
+      return Exp_Multi;
    }
 
    // FATOR
@@ -1715,7 +1866,7 @@ public class Main {
          resultado = searchTabela(token.getLexema());
          String saida = token.getLexema();
 
-         if (!(resultado == null)) { //Verifica se o id foi declarado
+         if (!(resultado == null)) { // Verifica se o id foi declarado
             ct("id");
             
             if (token.getToken().equals("[")) {
@@ -1736,9 +1887,16 @@ public class Main {
                }else{
                   resultado.setTipo("char");
                }
-               // ver a parada do tamanho do vetor aqui ? nem sei se é necessario
 
                ct("]");
+               int nt = NovoTemp(4); // novo temp pra f.end
+               resultado.setEndereco(Integer.toString(nt));
+               String mov = ("mov rax, [qword M+" + (Integer.parseInt(aux.getEndereco())* 4)+"]\n"); // exp.end -> reg 64 bits, reg1 // reg1 * n de bytes q o tipo do vetor ocupa
+               String mov2 = ("mov rbx, [qword M+" + (resultado.getEndereco()) + "]\n");
+               String add = ("add rax,rbx\n"); // id.end + reg1
+               String mov3 = ("mov rcx, rbx\n");// carregar reg1 p/ reg2
+               String mov4 = ("mov [qword M+" + nt + "], rcx\n"); // reg2 p/ o novo temp
+               writeCode(mov + mov2 + add + mov3 + mov4);
             }
 
          } else {
@@ -1749,6 +1907,8 @@ public class Main {
       } else if (token.getToken().equals("not")) {
          ct("not");
 
+         int novoTemp = NovoTemp(4);
+
          Simbolo fator = Fator();
          Simbolo id = searchTabela(fator.getLexema());
 
@@ -1756,6 +1916,12 @@ public class Main {
             if (!id.getClasse().equals("")) {
                if (id.getTipo().equals("boolean")) {
                   resultado.setTipo("boolean");
+                  resultado.setEndereco(Integer.toString(novoTemp)); 
+                  String mov = "mov eax, [qword M+" + id.getEndereco() + "]\n";
+                  String neg = "neg eax\n";
+                  String add = "add eax,1\n";
+                  String mov1 = "mov[qword M+" + resultado.getEndereco() + "], eax\n";
+                  writeCode(mov + neg + add + mov1);
                } else {
                   System.out.println(linhas);
                   System.out.print("tipos incompativeis.");
@@ -1769,6 +1935,12 @@ public class Main {
          } else if (fator.getToken().equals("const")) {
             if (id.getTipo().equals("boolean")) {
                resultado.setTipo("boolean");
+               resultado.setEndereco(Integer.toString(novoTemp)); 
+                  String mov = "mov eax, [qword M+" + id.getEndereco() + "]\n";;
+                  String neg = "neg eax\n";
+                  String add = "add eax,1\n";
+                  String mov1 = "mov[qword M+" + resultado.getEndereco() + "], eax\n";
+                  writeCode(mov + "\n" + neg + add + mov1); 
             } else {
                System.out.println(linhas);
                System.out.print("tipos incompativeis.");
@@ -1813,52 +1985,96 @@ public class Main {
          if (isNumero(token.getLexema()).equals("integer")) {
             token.setTipo("integer");
             token.setValor(token.getLexema());
+            token.setEndereco(Integer.toString(NovoTemp(4)));
+            String mov = "mov eax," + token.getValor() + "\n";
+            String mov1 = "mov [qword M +" + token.getEndereco() + "],eax\n";
+            writeCode(mov+mov1);
          } else if(isNumero(token.getLexema()).equals("real")){
             token.setTipo("real");
             token.setValor(token.getLexema());
+            token.setTamanho(4);
+            token = addEndereco(token, 4, ("dd " + token.getValor()));
          } else if (isCaractere(token.getLexema())) {
             token.setTipo("char");
             token.setValor(token.getLexema());
+            String auxChar = token.getValor();
+            auxChar = auxChar.replaceAll("\'", "");
+            token.setValor(auxChar);
+            token.setEndereco(Integer.toString(NovoTemp(4)));
+            String mov = "mov eax, '" + token.getValor() + "'\n";
+            String mov1 = "mov [qword M +" + token.getEndereco() + "],eax\n";
+            writeCode(mov+mov1);
          } else if (isHexa(token.getLexema())) {
             token.setTipo("char");
             token.setValor(token.getLexema());
+            String auxChar = token.getValor();
+            auxChar = auxChar.replaceAll("\'", "");
+            token.setValor(auxChar);
+            token.setEndereco(Integer.toString(NovoTemp(4)));
+            String mov = "mov eax," + token.getValor() + "\n";
+            String mov1 = "mov [qword M +" + token.getEndereco() + "],eax\n";
+            writeCode(mov+mov1);
          } else if (token.getLexema().equals("TRUE") || token.getLexema().equals("FALSE")) {
             token.setTipo("boolean");
             token.setValor(token.getLexema());
+            String auxBoolean = token.getValor();
+            if(auxBoolean ==  "TRUE"){
+               token.setValor("1");
+            }else{
+               token.setValor("0");
+            }
+            token.setEndereco(Integer.toString(NovoTemp(4)));
+            String mov = "mov eax," + token.getValor() + "\n";
+            String mov1 = "mov [qword M +" + token.getEndereco() + "],eax\n";
+            writeCode(mov+mov1);
          } else if (token.getLexema().length() > 1) {
             token.setTipo("string");
             token.setValor(token.getLexema());
+            String auxString = token.getValor();
+            auxString = auxString.replaceAll("\"", "");
+            token.setValor(auxString);
+            token.setTamanho(auxString.length()+1);
+            token = addEndereco(token, token.getTamanho(), ("db \"" + token.getValor() + "\",0"));
          } else {
             System.out.println(linhas);
             System.out.print("tipos incompativeis.");
             System.exit(0);
          }
 
+   
          aux = token;
          ct("const");
 
          return aux;
       }
-      return resultado;
+      return resultado; 
    }
 
-   public static void main(String[] args) {
+   public static void main(String[] args) throws IOException{
       // popular a tabela de simbolos com palavras reservadas e simbolos
       for (String palavra : alfabeto_simbolos) {
-         tabela.put(palavra, new Simbolo(palavra, palavra, "", "", 0, 0, ""));
-         indexTabela++;
+         tabela.put(palavra, new Simbolo(palavra, palavra, "", "", "", 0, ""));
       }
 
       for (String palavra : alfabeto_reservadas) {
-         tabela.put(palavra, new Simbolo(palavra, palavra, "", "", 0, 0, ""));
-         indexTabela++;
+         tabela.put(palavra, new Simbolo(palavra, palavra, "", "", "", 0, ""));
       }
 
-      // chamada inicial ao analisador sintatico
-      S();
+      String finalProgram = "mov rax, 60 \n mov rdi, 0 \nsyscall";
 
+      createFile();
+      // chamada inicial ao analisador sintatico e semantico
+      S();
+      try{
+      FileWriter output = new FileWriter(arquivoSaida.getAbsolutePath());
+      output.write(declarations + code);
+      output.close();
+   
       // retorno do programa compilado com sucesso
       if (error == false)
          System.out.print((linhasArquivo.size() + 1) + " linhas compiladas.");
+         output.write(declarations + code + finalProgram);
+      }catch (IOException e){
+      }
    }
 }
