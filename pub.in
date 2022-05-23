@@ -1,9 +1,11 @@
 {* Exemplo de Programa na linguagem L *}
 
-const a = 2;
-integer b = a;
+integer x = 0;
+const a = 'k';
+integer b = 5;
 
 real percentual;
 if a == 'k' begin
   x = x + 1;
 end
+
